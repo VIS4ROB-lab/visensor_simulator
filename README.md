@@ -4,11 +4,11 @@ The simulation of the VI-Sensor.   This is a very alpha version. No Guarantees.
 **Please do not share without the autorization of the author**
 
 License
-=======================
+------
 ???-- there is copyright code from other libraries. I still have to check or replace them.
 
 Installation
-======================
+------
 
 * Initialize catkin workspace:
 ```sh
@@ -38,7 +38,7 @@ Installation
 * Import the script "blender_camera_file_import.py" as an add-on in your blender (https://blender.stackexchange.com/questions/1688/installing-an-addon)
 
 Step-by-step
-========================
+------
 1. run uav_vi_blender.launch - it contains the gazebo,world controller and spawn the uav
 2. start to record -( at least /firefly/vi_sensor/ground_truth/pose and /firefly/vi_sensor/imu): rosbag record -o your_bag.bag /firefly/vi_sensor/ground_truth/pose  /firefly/vi_sensor/imu
 3. run the planner: roslaunch visensor_simulator waypoint_planner.launch
@@ -56,7 +56,7 @@ Step-by-step
 15. run the bagcreator: python kalibr_bagcreator.py --output-bag your_output.bag --folder /home/lucas/data/blender_test/blender_result_2017-07-04-10-30-56/ 
 
 Roadmap
-========================
+------
 * read camera comfiguration from another file, including a transformation between camera imu.
 * suport multiple cameras
 * write a camera path exporter compatible with our waypoint planner, better if we introduce this on our dataset format
@@ -66,8 +66,8 @@ Roadmap
 * replace copyright code.
 
 Camera Parameters
-========================
-
+------
+```
 cameras:
     - {T_SC:
         [ 0, 0, 1, 0,
@@ -82,4 +82,4 @@ cameras:
 
 camera_rate: 20
 imu_rate: 200
-
+```
