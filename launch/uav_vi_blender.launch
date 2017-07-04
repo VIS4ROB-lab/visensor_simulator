@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="mav_name" default="firefly"/>
+  <arg name="enable_logging" default="false" />
+  <arg name="log_file" default="$(arg mav_name)" />
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find rotors_gazebo)/worlds/basic.world" />
+    <!-- <arg name="debug" value="true"/> -->
+    <arg name="paused" value="false"/>
+    <!-- <arg name="gui" value="false"/> -->
+  </include>
+
+  <group ns="$(arg mav_name)">
+    <include file="$(find rotors_gazebo)/launch/spawn_mav.launch">
+      <arg name="mav_name" value="$(arg mav_name)" />
+      <arg name="model" value="$(find visensor_simulator)/resources/$(arg mav_name)_with_vi_sensor_no_cameras.gazebo" />
+      <arg name="enable_logging" value="$(arg enable_logging)" />
+      <arg name="enable_ground_truth" value="true" />
+      <arg name="log_file" value="$(arg log_file)"/>
+    </include>
+  </group>
+
+  <include file="$(find mav_linear_mpc)/launch/mav_linear_mpc_sim.launch">
+     <arg name="mav_name" value="$(arg mav_name)" />
+  </include>
+
+    <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam1" args="set  $(arg mav_name)/mav_linear_mpc roll_max 0.15" />
+    <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam2" args="set  $(arg mav_name)/mav_linear_mpc pitch_max 0.15" />
+
+    <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam3" args="set  gazebo time_step 0.005" />
+    <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam4" args="set  gazebo max_update_rate 200" />
+
+</launch>

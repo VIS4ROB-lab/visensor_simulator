@@ -1,0 +1,85 @@
+VI-Sensor Simulator
+========================
+The simulation of the VI-Sensor.   This is a very alpha version. No Guarantees.
+**Please do not share without the autorization of the author**
+
+License
+=======================
+???-- there is copyright code from other libraries. I still have to check or replace them.
+
+Installation
+======================
+
+* Initialize catkin workspace:
+```sh
+  $ mkdir -p ~/catkin_ws/src
+  $ cd ~/catkin_ws
+  $ catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
+  $ catkin init  # initialize your catkin workspace
+```
+* Get the simulator and dependencies
+```sh
+  $ sudo apt-get install liblapacke-dev
+  $ git clone https://github.com/catkin/catkin_simple.git
+  $ git clone https://github.com/ethz-asl/rotors_simulator.git
+  $ git clone https://github.com/ethz-asl/mav_comm.git
+  $ git clone https://github.com/ethz-asl/eigen_catkin.git
+  $ git clone https://github.com/ethz-asl/glog_catkin.git
+  $ git clone https://github.com/ethz-asl/mav_control_rw.git
+
+  $ git clone git@github.com:VIS4ROB-lab/visensor_simulator.git
+
+```
+* Build the workspace  
+```sh
+  $ catkin build
+```
+
+* Import the script "blender_camera_file_import.py" as an add-on in your blender (https://blender.stackexchange.com/questions/1688/installing-an-addon)
+
+Step-by-step
+========================
+1. run uav_vi_blender.launch - it contains the gazebo,world controller and spawn the uav
+2. start to record -( at least /firefly/vi_sensor/ground_truth/pose and /firefly/vi_sensor/imu): rosbag record -o your_bag.bag /firefly/vi_sensor/ground_truth/pose  /firefly/vi_sensor/imu
+3. run the planner: roslaunch visensor_simulator waypoint_planner.launch
+4. publish a msg to send the uav to the initial position of the trajectory (you can use the rqt topic publisher)
+5. stop the recording (Sanity checks: 1. use "rosbag info" to check if the number of msg from the two topic are the same. 2. use rqt_bag to see if the two topics are aligned in time)
+6. extract the visensor imu poses: rostopic echo -b your_bag.bag -p /firefly/vi_sensor/ground_truth/pose > vi_imu_poses.csv
+7. extract the visensor imu measurements - rostopic echo -b your_bag.bag -p /firefly/vi_sensor/imu > vi_imu.csv
+8. open blender, select the camera, file->import->Ros poses dump file(*csv), choose the file vi_imu_poses.csv
+9. setup your scene objects and lights
+10. set the Active viewport to the camera view(Numpad 0)
+11. set the begining and end of the render in the timeline
+12. render using OpenGL render of the active viewport, use the Material Shader as Display method.
+13. copy the file vi_imu.csv to the folder blender_result_2017-07-04-10-30-56
+14. run the renamer: python rename_blender_frames.py --folder /home/lucas/data/blender_test/blender_result_2017-07-04-10-30-56
+15. run the bagcreator: python kalibr_bagcreator.py --output-bag your_output.bag --folder /home/lucas/data/blender_test/blender_result_2017-07-04-10-30-56/ 
+
+Roadmap
+========================
+* read camera comfiguration from another file, including a transformation between camera imu.
+* suport multiple cameras
+* write a camera path exporter compatible with our waypoint planner, better if we introduce this on our dataset format
+* change from firefly to neo11
+* develop a software to build a simplified version of the word to allow collision on the simulation. BVH and Octomap are options
+* better simple planner.
+* replace copyright code.
+
+Camera Parameters
+========================
+
+cameras:
+    - {T_SC:
+        [ 0, 0, 1, 0,
+          -1, 0, 0, 0,
+          0,-1, 0, 0,
+          0, 0, 0, 1],
+        image_dimension: [752, 480],
+        distortion_coefficients: [0.0, 0.0, -0.0, 0.0],
+        distortion_type: radialtangential,
+        focal_length: [455, 455],
+        principal_point: [376.5, 240.5]}
+
+camera_rate: 20
+imu_rate: 200
+

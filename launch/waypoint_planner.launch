@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="mav_name" default="firefly"/>
+  <arg name="enable_logging" default="false" />
+  <arg name="enable_ground_truth" default="true" />
+  <arg name="log_file" default="$(arg mav_name)" />
+
+  <group ns="$(arg mav_name)">
+    <node name="planner" pkg="visensor_simulator" type="waypoint_planner" output="screen">
+      <remap from="reference_odometry_topic" to="ground_truth/odometry" />
+    </node>
+  </group>
+</launch>

@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!--
+    based on rotors example
+-->
+
+<robot name="neo11" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- Instantiate default neo11-->
+  <xacro:include filename="$(find rotors_description)/urdf/neo11_generic_odometry_sensor.gazebo" />
+
+  <!-- Mount a VI-sensor in the front of Neo. -->
+  <xacro:vi_sensor_macro
+      namespace="${namespace}/vi_sensor"
+      parent_link="${namespace}/base_link"
+      enable_cameras="false"
+      enable_depth="false"
+      enable_ground_truth="true">
+    <origin xyz="0.133 0.0 -0.0565" rpy="0.0 ${20.0/180.0*pi} 0.0" />
+  </xacro:vi_sensor_macro>
+</robot>
