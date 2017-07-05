@@ -20,13 +20,13 @@ Installation
 * Get the simulator and dependencies
 ```sh
   $ sudo apt-get install liblapacke-dev
-  $ git clone https://github.com/catkin/catkin_simple.git
-  $ git clone https://github.com/ethz-asl/rotors_simulator.git
-  $ git clone https://github.com/ethz-asl/mav_comm.git
-  $ git clone https://github.com/ethz-asl/eigen_catkin.git
-  $ git clone https://github.com/ethz-asl/glog_catkin.git
-  $ git clone https://github.com/ethz-asl/mav_control_rw.git
-
+  $ git clone git@github.com:catkin/catkin_simple
+  $ git clone git@github.com:ethz-asl/rotors_simulator
+  $ git clone git@github.com:ethz-asl/mav_comm
+  $ git clone git@github.com:ethz-asl/eigen_catkin
+  $ git clone git@github.com:ethz-asl/glog_catkin
+  $ git clone git@github.com:ethz-asl/mav_control_rw
+  
   $ git clone git@github.com:VIS4ROB-lab/visensor_simulator.git
 
 ```
