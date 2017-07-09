@@ -61,12 +61,14 @@ Roadmap
 * suport multiple cameras
 * write a camera path exporter compatible with our waypoint planner, better if we introduce this on our dataset format
 * change from firefly to neo11
-* develop a software to build a simplified version of the word to allow collision on the simulation. BVH and Octomap are options
+* develop a software to build a simplified version of the world to allow collision on the simulation. BVH and Octomap are options
 * better simple planner.
 * replace copyright code.
 
 Camera Parameters
 ------
+T_SC is the transformation from Camera frame to IMU frame
+The file vi_imu_poses.csv contains the ground truth pose in imu frame at each timestamp.
 ```
 cameras:
     - {T_SC:
