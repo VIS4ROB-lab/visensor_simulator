@@ -67,8 +67,8 @@ Roadmap
 
 Camera Parameters
 ------
-T_SC is the transformation from Camera frame to IMU frame
-The file vi_imu_poses.csv contains the ground truth pose in imu frame at each timestamp.
+* T_SC is the transformation from Camera frame to IMU frame.
+* The file vi_imu_poses.csv contains the ground truth pose in imu frame at each timestamp.
 ```
 cameras:
     - {T_SC:
