@@ -19,8 +19,6 @@
       <arg name="enable_ground_truth" value="true" />
       <arg name="log_file" value="$(arg log_file)"/>
     </include>
-    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
-    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
   </group>
 
   <include file="$(find mav_linear_mpc)/launch/mav_linear_mpc_sim.launch">
@@ -32,4 +30,5 @@
 
     <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam3" args="set  gazebo time_step 0.005" />
     <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam4" args="set  gazebo max_update_rate 200" />
+
 </launch>

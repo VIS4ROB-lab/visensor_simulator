@@ -124,11 +124,11 @@ int main(int argc, char** argv)
     }
     ROS_INFO_STREAM("Loaded " << planner.waypoints_.size() << " waypoints from file.");
   } else {
-    planner.waypoints_.push_back(Waypoint(1,-50,50,0));
-    planner.waypoints_.push_back(Waypoint(2,50,50,0));
-    planner.waypoints_.push_back(Waypoint(2,-50,50,0));
-    planner.waypoints_.push_back(Waypoint(1,-50,50,0));
-    planner.waypoints_.push_back(Waypoint(1,-50,50,0));
+    planner.waypoints_.push_back(Waypoint(1,-50,2,0));
+    planner.waypoints_.push_back(Waypoint(1,50,2,0));
+    planner.waypoints_.push_back(Waypoint(2,50,2,0));
+    planner.waypoints_.push_back(Waypoint(2,-50,2,0));
+    planner.waypoints_.push_back(Waypoint(1,-50,2,0));
     ROS_INFO_STREAM("Loaded " << planner.waypoints_.size() << " default waypoints.");
   }
 
