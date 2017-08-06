@@ -6,6 +6,7 @@
   <arg name="log_file" default="$(arg mav_name)" />
 
   <group ns="$(arg mav_name)">
+    <param name="/filename_waypoints" value="/tmp/waypoints.txt"/>
     <node name="planner" pkg="visensor_simulator" type="waypoint_planner" output="screen">
       <remap from="reference_odometry_topic" to="ground_truth/odometry" />
     </node>

@@ -1,4 +1,5 @@
 
+#include <fstream>
 #include <list>
 
 #include <ros/ros.h>
@@ -109,11 +110,27 @@ int main(int argc, char** argv)
 
   WaypointPlanner planner(0.1,1.0);
 
-  planner.waypoints_.push_back(Waypoint(1,-50,2,0));
-  planner.waypoints_.push_back(Waypoint(1,50,2,0));
-  planner.waypoints_.push_back(Waypoint(2,50,2,0));
-  planner.waypoints_.push_back(Waypoint(2,-50,2,0));
-  planner.waypoints_.push_back(Waypoint(1,-50,2,0));
+  ros::NodeHandle nh;
+  std::string filename_waypoints;
+  if (nh.getParam("/filename_waypoints", filename_waypoints)) {
+    ROS_INFO_STREAM("Loading waypoints from: " << filename_waypoints);
+    std::ifstream file(filename_waypoints);
+    double x, y, z, yaw;
+    while (file >> x >> y >> z >> yaw) {
+      planner.waypoints_.push_back(Waypoint(x, y, z, yaw));
+      if (file.eof()) {
+        break;
+      }
+    }
+    ROS_INFO_STREAM("Loaded " << planner.waypoints_.size() << " waypoints from file.");
+  } else {
+    planner.waypoints_.push_back(Waypoint(1,-50,2,0));
+    planner.waypoints_.push_back(Waypoint(1,50,2,0));
+    planner.waypoints_.push_back(Waypoint(2,50,2,0));
+    planner.waypoints_.push_back(Waypoint(2,-50,2,0));
+    planner.waypoints_.push_back(Waypoint(1,-50,2,0));
+    ROS_INFO_STREAM("Loaded " << planner.waypoints_.size() << " default waypoints.");
+  }
 
   planner.run();
 
