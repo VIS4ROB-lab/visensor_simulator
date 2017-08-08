@@ -19,6 +19,7 @@ Installation
 ```
 * Get the simulator and dependencies
 ```sh
+  $ cd ~/catkin_ws/src
   $ sudo apt-get install liblapacke-dev
   $ git clone git@github.com:catkin/catkin_simple
   $ git clone git@github.com:ethz-asl/rotors_simulator
