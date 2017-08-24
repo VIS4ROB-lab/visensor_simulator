@@ -3,10 +3,11 @@
   <arg name="mav_name" default="firefly"/>
   <arg name="enable_logging" default="false" />
   <arg name="enable_ground_truth" default="true" />
+  <arg name="waypoint_file" default="$(find visensor_simulator)/resources/waypoints.txt" />
   <arg name="log_file" default="$(arg mav_name)" />
 
   <group ns="$(arg mav_name)">
-    <param name="/filename_waypoints" value="/tmp/waypoints.txt"/>
+    <param name="/filename_waypoints" value="$(arg waypoint_file)"/>
     <node name="planner" pkg="visensor_simulator" type="waypoint_planner" output="screen">
       <remap from="reference_odometry_topic" to="ground_truth/odometry" />
     </node>

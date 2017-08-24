@@ -40,21 +40,45 @@ Installation
 
 Step-by-step
 ------
-1. run uav_vi_blender.launch - it contains the gazebo,world controller and spawn the uav
-2. start to record -( at least /firefly/vi_sensor/ground_truth/pose and /firefly/vi_sensor/imu): rosbag record -o your_bag.bag /firefly/vi_sensor/ground_truth/pose  /firefly/vi_sensor/imu
-3. run the planner: roslaunch visensor_simulator waypoint_planner.launch
+1. starts gazebo 
+```sh
+  $ roslaunch visensor_simulator uav_vi_blender.launch
+```
+2. start to record ( at least /firefly/vi_sensor/ground_truth/pose and /firefly/vi_sensor/imu): 
+```sh
+  $ rosbag record -o your_bag.bag /firefly/vi_sensor/ground_truth/pose  /firefly/vi_sensor/imu
+```
+3. run our planner (or any other planner). The default waypoint file is in the resources folder, but your can give as argument for the launch file (waypoint_file:="/home/you/waypoints.txt"): 
+```sh
+  $ roslaunch visensor_simulator waypoint_planner.launch
+```
 4. publish a msg to send the uav to the initial position of the trajectory (you can use the rqt topic publisher)
+```sh
+  $ rostopic pub --once /firefly/command/pose/ geometry_msgs/PoseStamped '{header: {stamp: now, frame_id: "world"}, pose: {position: {x: 0.0, y: 0.0, z: 2.0}, orientation: {w: 1.0}}}'
+```
 5. stop the recording (Sanity checks: 1. use "rosbag info" to check if the number of msg from the two topic are the same. 2. use rqt_bag to see if the two topics are aligned in time)
-6. extract the visensor imu poses: rostopic echo -b your_bag.bag -p /firefly/vi_sensor/ground_truth/pose > vi_imu_poses.csv
-7. extract the visensor imu measurements - rostopic echo -b your_bag.bag -p /firefly/vi_sensor/imu > vi_imu.csv
+6. extract the visensor imu poses: 
+```sh
+  $ rostopic echo -b your_bag.bag -p /firefly/vi_sensor/ground_truth/pose > vi_imu_poses.csv
+```
+7. extract the visensor imu measurements:
+```sh
+  $ rostopic echo -b your_bag.bag -p /firefly/vi_sensor/imu > vi_imu.csv
+```
 8. open blender, select the camera, file->import->Ros poses dump file(*csv), choose the file vi_imu_poses.csv
 9. setup your scene objects and lights
 10. set the Active viewport to the camera view(Numpad 0)
 11. set the begining and end of the render in the timeline
 12. render using OpenGL render of the active viewport, use the Material Shader as Display method.
-13. copy the file vi_imu.csv to the folder blender_result_2017-07-04-10-30-56
-14. run the renamer: python rename_blender_frames.py --folder /home/lucas/data/blender_test/blender_result_2017-07-04-10-30-56
-15. run the bagcreator: python kalibr_bagcreator.py --output-bag your_output.bag --folder /home/lucas/data/blender_test/blender_result_2017-07-04-10-30-56/ 
+13. copy the file vi_imu.csv to the folder blender_result_####date####
+14. run the renamer: 
+```sh
+  $ python rename_blender_frames.py --folder /home/lucas/data/blender_test/blender_result_####date####
+```
+15. run the bagcreator:  
+```sh 
+  $ python kalibr_bagcreator.py --output-bag your_output.bag --folder /home/lucas/data/blender_test/blender_result_####date####/
+```
 
 Roadmap
 ------
