@@ -1,55 +1,58 @@
 import numpy as np
 import argparse
-import os
 import sys
-import csv
+import math
 
-#setup the argument list
-parser = argparse.ArgumentParser(description='Generate a zig-zag trajectory')
-parser.add_argument('-o','--output',  metavar='output', help='output waypoint file')
-parser.add_argument('-w','--width',  metavar='width', help='width')
-parser.add_argument('-l','--length',  metavar='length', help='length')
-parser.add_argument('-gsd','--ground_sample_distance',  metavar='height',default=0.1, help='ground sample distance (in meters)')
-parser.add_argument('-fovh','--field_of_view_horizontal',  metavar='fovh',default=65, help='field of view - horizontal(in degrees)')
-parser.add_argument('-img_h','--image_resolution_horizontal',  metavar='cam_h',default=2560, help='image resolution - horizontal( in pixels)')
-parser.add_argument('-img_v','--image_resolution_vertical',  metavar='cam_v',default=1920, help='image resolution - vertical( in pixels)')
+#TODO find a better name for vertical and horizontal and the correlation with x,y,z
 
+def calculate_height(fovh,img_h,gsd):
+    height = gsd*img_h/(2*math.tan(fovh/2))
+    return height
+    
+def calculate_spacing(gsd,resolution,overlap):
+    space = gsd*resolution*overlap*0.01
+    return space
 
-#print help if no argument is specified
-if len(sys.argv)<2:
-    parser.print_help()
-    sys.exit(0)
+def main():    
+    
+    #setup the argument list
+    parser = argparse.ArgumentParser(description='Generate a zig-zag trajectory (ex. -o testfile.txt  -resh 752 -resv 480 -glv 50 -glh 20 ')
+    parser.add_argument('-o','--output',  metavar='filename', help='output waypoint file')
+    parser.add_argument('-glh','--ground_lenght_horizontal',  metavar='value', type=float,default=100,  help='ground lenght horizontal (in meters)')
+    parser.add_argument('-glv','--ground_lenght_vertical',  metavar='value', type=float,default=200,  help='ground lenght vertical (in meters)')
+    parser.add_argument('-gsd','--ground_sample_distance',  metavar='value', type=float,default=0.01, help='ground sample distance (in meters)')
+    parser.add_argument('-fovh','--field_of_view_horizontal',  metavar='value', type=float,default=65, help='field of view - horizontal(in degrees)')
+    parser.add_argument('-resh','--image_resolution_horizontal',  metavar='value', type=float,default=2560, help='image resolution - horizontal( in pixels)')
+    parser.add_argument('-resv','--image_resolution_vertical',  metavar='value', type=float,default=1920, help='image resolution - vertical( in pixels)')
+    parser.add_argument('-ovh','--overlap_horizontal',  metavar='value', type=float,default=80, help='overlap between images - vertical( in percentage[0-100])')
+    parser.add_argument('-ovv','--overlap_vertical',  metavar='value', type=float,default=80, help='overlap between images - vertical( in percentage [0-100])')
 
-#parse the args
-parsed = parser.parse_args()
+#todo Add validation to the input    
+    #print help if no argument is specified
+    if len(sys.argv)<2:
+        parser.print_help()
+        sys.exit(0)
+    
+    #parse the args
+    parsed = parser.parse_args()
+    
+    height = calculate_height(parsed.field_of_view_horizontal,parsed.image_resolution_vertical,parsed.ground_sample_distance)
+    sample_distance_horizontal = calculate_spacing(parsed.ground_sample_distance,parsed.image_resolution_horizontal,parsed.overlap_horizontal)
+    sample_distance_vertical = calculate_spacing(parsed.ground_sample_distance,parsed.image_resolution_vertical,parsed.overlap_vertical)
+    
+    vertical_positions = np.linspace(0,parsed.ground_lenght_vertical,parsed.ground_lenght_vertical/sample_distance_vertical, endpoint=True)
+    horizontal_positions = np.linspace(0,parsed.ground_lenght_horizontal,parsed.ground_lenght_horizontal/sample_distance_horizontal, endpoint=True)
+    
+    going_right = True
+    
+    with open(parsed.output,'w') as output_file:
+        for u in vertical_positions:        
+            for v in horizontal_positions:
+                v_directional = v if going_right else parsed.ground_lenght_horizontal-v
+                output_file.write('{0:.2f} {1:.2f} {2:.2f} {3:.2f}\n'.format( u,v_directional,height,0))
+            going_right = not going_right
+    
+    print "done!"            
 
-print parsed
-
-
-
-with open(parsed.output,'w') as csvfile:
-    reader = csv.DictReader(csvfile,fieldnames=['id','time'])
-    for row in reader:
-    	old_name = os.path.join(parsed.folder,'cam0','rgb_'+row['id']+'.png')
-    	new_name = os.path.join(parsed.folder,'cam0',row['time']+'.png')
-    	print(long(row['time']))
-    	#print(new_name)
-    	try:
-    		os.rename(old_name,new_name)    	
-    	except  OSError:
-    		print('error on '+old_name)
-
-#creating imu0.csv with imu data
-with open(os.path.join(parsed.folder, 'vi_imu.csv'), 'r') as inFile, open(os.path.join(parsed.folder, 'imu0.csv'), 'w') as outFile:
-    fieldnames = ['field.header.stamp', 'field.angular_velocity.x', 'field.angular_velocity.y',
-                  'field.angular_velocity.z',
-                  'field.linear_acceleration.x', 'field.linear_acceleration.y', 'field.linear_acceleration.z']
-    writer = csv.DictWriter(outFile, fieldnames=fieldnames, extrasaction='ignore')
-#  writer.writerow(['timestamp,omega_x,omega_y,omega_z,alpha_x,alpha_y,alpha_z'])
-    writer.writerow({'field.header.stamp': 'timestamp', 'field.angular_velocity.x': 'omega_x', 'field.angular_velocity.y': 'omega_y', 'field.angular_velocity.z': 'omega_z',
-                    'field.linear_acceleration.x': 'alpha_x', 'field.linear_acceleration.y': 'alpha_y', 'field.linear_acceleration.z': 'alpha_z'})
-
-    #r = csv.reader(inFile)
-    for row in csv.DictReader(inFile):
-        # writes the reordered rows to the new file
-        writer.writerow(row)
+if __name__ == "__main__":
+    main()
