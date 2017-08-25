@@ -62,7 +62,7 @@ def read_ros_pose_file(self,context, filepath):
             obj.keyframe_insert('location')
             obj.rotation_mode = "QUATERNION"            
             imu_orientation = mathutils.Quaternion([float(positions[i][t['qw']]),float(positions[i][t['qx']]),float(positions[i][t['qy']]),float(positions[i][t['qz']])])
-            cam_imu_rotation = mathutils.Quaternion([0.0, 1.0, 0.0],math.radians(-90))
+            cam_imu_rotation = mathutils.Quaternion([0.0, 1.0, 0.0],math.radians(-45))
             obj.rotation_quaternion = imu_orientation * cam_imu_rotation * mathutils.Quaternion([0.0, 0.0, 1.0],math.radians(-90))
             obj.keyframe_insert('rotation_quaternion')
             keyframe_counter = keyframe_counter+1;
