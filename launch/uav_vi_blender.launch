@@ -25,8 +25,8 @@
      <arg name="mav_name" value="$(arg mav_name)" />
   </include>
 
-    <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam1" args="set  $(arg mav_name)/mav_linear_mpc roll_max 0.15" />
-    <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam2" args="set  $(arg mav_name)/mav_linear_mpc pitch_max 0.15" />
+    <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam1" args="set  $(arg mav_name)/mav_linear_mpc roll_max 0.05" />
+    <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam2" args="set  $(arg mav_name)/mav_linear_mpc pitch_max 0.05" />
 
     <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam3" args="set  gazebo time_step 0.005" />
     <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam4" args="set  gazebo max_update_rate 200" />

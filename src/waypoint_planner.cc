@@ -116,7 +116,8 @@ int main(int argc, char** argv)
     ROS_INFO_STREAM("Loading waypoints from: " << filename_waypoints);
     std::ifstream file(filename_waypoints);
     double x, y, z, yaw;
-    while (file >> x >> y >> z >> yaw) {
+    char eater;//eats commas
+    while (file >> x >> eater >> y >> eater >> z >> eater >> yaw) {
       planner.waypoints_.push_back(Waypoint(x, y, z, yaw));
       if (file.eof()) {
         break;
