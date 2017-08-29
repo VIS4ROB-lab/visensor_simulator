@@ -1,31 +1,24 @@
-import numpy as np
 import argparse
 import sys
 import math
 
-#TODO find a better name for vertical and horizontal and the correlation with x,y,z
 
-def calculate_height(fovh,img_h,gsd):
-    height = gsd*img_h/(2*math.tan(fovh/2))
-    return height
-    
-def calculate_spacing(gsd,resolution,overlap):
-    space = gsd*resolution*overlap*0.01
-    return space
 
 def main():    
     
     #setup the argument list
-    parser = argparse.ArgumentParser(description='Generate a zig-zag trajectory (ex. -o testfile.txt  -resh 752 -resv 480 -glv 50 -glh 20 ')
+    parser = argparse.ArgumentParser(description='Generate a zig-zag trajectory (ex. -o testfile.txt  ')
     parser.add_argument('-o','--output',  metavar='filename', help='output waypoint file')
-    parser.add_argument('-glh','--ground_lenght_horizontal',  metavar='value', type=float,default=100,  help='ground lenght horizontal (in meters)')
-    parser.add_argument('-glv','--ground_lenght_vertical',  metavar='value', type=float,default=200,  help='ground lenght vertical (in meters)')
-    parser.add_argument('-gsd','--ground_sample_distance',  metavar='value', type=float,default=0.01, help='ground sample distance (in meters)')
-    parser.add_argument('-fovh','--field_of_view_horizontal',  metavar='value', type=float,default=65, help='field of view - horizontal(in degrees)')
-    parser.add_argument('-resh','--image_resolution_horizontal',  metavar='value', type=float,default=2560, help='image resolution - horizontal( in pixels)')
-    parser.add_argument('-resv','--image_resolution_vertical',  metavar='value', type=float,default=1920, help='image resolution - vertical( in pixels)')
-    parser.add_argument('-ovh','--overlap_horizontal',  metavar='value', type=float,default=80, help='overlap between images - vertical( in percentage[0-100])')
-    parser.add_argument('-ovv','--overlap_vertical',  metavar='value', type=float,default=80, help='overlap between images - vertical( in percentage [0-100])')
+    parser.add_argument('-bbn','--bound_box_north',  metavar='value', type=float,default=0,  help='max lenght of the trajectory in the north direction (in meters)')
+    parser.add_argument('-bbe','--bound_box_east',  metavar='value', type=float,default=80,  help='max lenght of the trajectory in the east direction (in meters)')
+    parser.add_argument('-bbu','--bound_box_up',  metavar='value', type=float,default=5, help='max lenght of the trajectory in the up direction (in meters)')
+    
+    parser.add_argument('-sn','--step_north',  metavar='value', type=float,default=0,  help='step size in the north direction (in meters)')
+    parser.add_argument('-se','--step_east',  metavar='value', type=float,default=2,  help='step size in the east direction (in meters)')
+    parser.add_argument('-su','--step_up',  metavar='value', type=float,default=2.0, help='step size in the up direction (in meters)')
+    
+    parser.add_argument('-ou','--offset_up',  metavar='value', type=float,default=1.0, help='offset on up direction.(simulators usually cannot work with up=0 (in meters)')
+    
 
 #todo Add validation to the input    
     #print help if no argument is specified
@@ -36,21 +29,36 @@ def main():
     #parse the args
     parsed = parser.parse_args()
     
-    height = calculate_height(parsed.field_of_view_horizontal,parsed.image_resolution_vertical,parsed.ground_sample_distance)
-    sample_distance_horizontal = calculate_spacing(parsed.ground_sample_distance,parsed.image_resolution_horizontal,parsed.overlap_horizontal)
-    sample_distance_vertical = calculate_spacing(parsed.ground_sample_distance,parsed.image_resolution_vertical,parsed.overlap_vertical)
+    if parsed.bound_box_east == 0 or (parsed.bound_box_north == 0 and parsed.bound_box_up == 0)  :
+        print "error"
+        sys.exit(0)
+        
+    if parsed.step_east <= 0:
+        parsed.step_east = parsed.bound_box_east
     
-    vertical_positions = np.linspace(0,parsed.ground_lenght_vertical,parsed.ground_lenght_vertical/sample_distance_vertical, endpoint=True)
-    horizontal_positions = np.linspace(0,parsed.ground_lenght_horizontal,parsed.ground_lenght_horizontal/sample_distance_horizontal, endpoint=True)
     
-    going_right = True
+    
+    num_rows_east = int(math.floor(parsed.bound_box_east/parsed.step_east) + 1)
+    
+    
+    num_rows_up = 1 if parsed.step_up <= 0 else (parsed.bound_box_up/parsed.step_up)+1
+    num_rows_north = 1 if parsed.step_north <= 0 else (parsed.bound_box_north/parsed.step_north)+1
+    
+    num_rows = int(math.floor(max(num_rows_up,num_rows_north)))
+    
+    print "the output has {} rows and {} cols".format(num_rows,num_rows_east)
+    
+    going_east = True
     
     with open(parsed.output,'w') as output_file:
-        for u in vertical_positions:        
-            for v in horizontal_positions:
-                v_directional = v if going_right else parsed.ground_lenght_horizontal-v
-                output_file.write('{0:.2f} {1:.2f} {2:.2f} {3:.2f}\n'.format( u,v_directional,height,0))
-            going_right = not going_right
+        for row in range(num_rows):
+            n = min(row*parsed.step_north,parsed.bound_box_north)
+            u = min(row*parsed.step_up,parsed.bound_box_up)+parsed.offset_up
+            for col in range(num_rows_east):
+                e =  min(col*parsed.step_east,parsed.bound_box_east)
+                e_directional = e if going_east else parsed.bound_box_east-e
+                output_file.write('{0:.2f},{1:.2f},{2:.2f},{3:.2f}\n'.format( n,-e_directional,u,0))
+            going_east = not going_east
     
     print "done!"            
 

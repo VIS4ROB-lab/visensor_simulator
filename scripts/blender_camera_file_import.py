@@ -62,7 +62,7 @@ def read_ros_pose_file(self,context, filepath):
             obj.keyframe_insert('location')
             obj.rotation_mode = "QUATERNION"            
             imu_orientation = mathutils.Quaternion([float(positions[i][t['qw']]),float(positions[i][t['qx']]),float(positions[i][t['qy']]),float(positions[i][t['qz']])])
-            cam_imu_rotation = mathutils.Quaternion([0.0, 1.0, 0.0],math.radians(-45))
+            cam_imu_rotation = mathutils.Quaternion([0.0, 1.0, 0.0],math.radians(-90))
             obj.rotation_quaternion = imu_orientation * cam_imu_rotation * mathutils.Quaternion([0.0, 0.0, 1.0],math.radians(-90))
             obj.keyframe_insert('rotation_quaternion')
             keyframe_counter = keyframe_counter+1;
@@ -75,7 +75,7 @@ def read_ros_pose_file(self,context, filepath):
     scene.render.resolution_y = 480
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = 'PNG'
-    scene.render.image_settings.color_mode = 'BW'
+    scene.render.image_settings.color_mode = 'RGB'
     scene.render.image_settings.color_depth = '8'
     scene.render.image_settings.compression = 0
 
