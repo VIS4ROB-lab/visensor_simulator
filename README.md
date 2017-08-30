@@ -54,7 +54,8 @@ Step-by-step
 ```
 4. publish a msg to send the uav to the initial position of the trajectory (you can use the rqt topic publisher)
 ```sh
-  $ rostopic pub --once /firefly/command/pose/ geometry_msgs/PoseStamped '{header: {stamp: now, frame_id: "world"}, pose: {position: {x: 0.0, y: 0.0, z: 2.0}, orientation: {w: 1.0}}}'
+  $ rostopic pub --once /firefly/command/pose/ geometry_msgs/PoseStamped \
+  '{header: {stamp: now, frame_id: "world"}, pose: {position: {x: 0.0, y: 0.0, z: 2.0}, orientation: {w: 1.0}}}'
 ```
 5. stop the recording (Sanity checks: 1. use "rosbag info" to check if the number of msg from the two topic are the same. 2. use rqt_bag to see if the two topics are aligned in time)
 6. extract the visensor imu poses: 

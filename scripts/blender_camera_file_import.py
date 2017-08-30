@@ -75,7 +75,7 @@ def read_ros_pose_file(self,context, filepath):
     scene.render.resolution_y = 480
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = 'PNG'
-    scene.render.image_settings.color_mode = 'BW'
+    scene.render.image_settings.color_mode = 'RGB'
     scene.render.image_settings.color_depth = '8'
     scene.render.image_settings.compression = 0
 
