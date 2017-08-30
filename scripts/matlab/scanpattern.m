@@ -1,3 +1,6 @@
+%% lawnmower scan pattern with down looking camera
+%% generates waypoints for rotors
+%% optionally generates directly poses for blender (vision-only use, besides the name vi_imu_poses.csv)  
 
 close all;
 clear;
