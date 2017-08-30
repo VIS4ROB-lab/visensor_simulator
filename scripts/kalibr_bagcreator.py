@@ -39,7 +39,7 @@ def getImageFilesFromDir(dir):
             for f in files:
                 if os.path.splitext(f)[1] in ['.bmp', '.png', '.jpg']:
                     image_files.append( os.path.join( path, f ) )
-                    timestamps.append(os.path.splitext(f)[0]) 
+                    timestamps.append(int(os.path.splitext(f)[0])) 
     #sort by timestamp
     sort_list = sorted(zip(timestamps, image_files))
     image_files = [file[1] for file in sort_list]
