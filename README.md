@@ -9,6 +9,9 @@ License
 
 Installation
 ------
+* Requirements:
+  * ROS Indigo - (http://wiki.ros.org/indigo/Installation/Ubuntu)
+  * Blender - (https://askubuntu.com/questions/110821/how-to-install-blender-from-the-official-website)
 
 * Initialize catkin workspace:
 ```sh
