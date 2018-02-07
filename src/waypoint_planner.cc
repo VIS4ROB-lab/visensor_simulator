@@ -13,6 +13,8 @@
 
 using namespace ros;
 
+const float kDEG_2_RAD = M_PI / 180.0;
+
 struct Waypoint{
     double x;
     double y;
@@ -39,7 +41,7 @@ private:
   ros::Rate loop_rate_;
 
   double yaw_max_error_;
-  double position_max_error_squared;
+  double position_max_error_squared_;
 
   //Callback functions
   void referenceOdometryCallback(const nav_msgs::Odometry& odometry_msg);
@@ -48,21 +50,26 @@ private:
 WaypointPlanner::WaypointPlanner(double yaw_max_error, double position_max_error):
   nh_private_("~"),
   yaw_max_error_(yaw_max_error),
-  position_max_error_squared(position_max_error*position_max_error),
+  position_max_error_squared_(position_max_error*position_max_error),
   loop_rate_(10)
 {
-  reference_odometry_sub_ =  nh_.subscribe("reference_odometry_topic", 100, &WaypointPlanner::referenceOdometryCallback, this);
+  reference_odometry_sub_ =  nh_.subscribe("reference_odometry_topic", 10, &WaypointPlanner::referenceOdometryCallback, this);
   pose_command_pub_ = nh_.advertise<trajectory_msgs::MultiDOFJointTrajectory>(mav_msgs::default_topics::COMMAND_TRAJECTORY, 10);  
 }
 
 double quat2yaw(const geometry_msgs::Quaternion & q)
 {
-    return std::atan2(2.0*(q.y*q.z + q.w*q.x), q.w*q.w - q.x*q.x - q.y*q.y + q.z*q.z);
+  double siny = 2.0 * (q.w * q.z + q.x * q.y);
+  double cosy = 1.0 - 2.0 * (q.y * q.y + q.z * q.z);  
+  return atan2(siny, cosy);
 }
 
 double squared_dist(const geometry_msgs::Point& curr_pos,Waypoint waypoint)
 {
-    return (((curr_pos.x-waypoint.x)*(curr_pos.x-waypoint.x))+((curr_pos.y-waypoint.y)*(curr_pos.y-waypoint.y))+((curr_pos.z-waypoint.z)*(curr_pos.z-waypoint.z)));
+    double dx =  curr_pos.x-waypoint.x;
+    double dy =  curr_pos.y-waypoint.y;
+    double dz =  curr_pos.z-waypoint.z;
+    return ((dx*dx)+(dy*dy)+(dz*dz));
 }
 
 void WaypointPlanner::referenceOdometryCallback(const nav_msgs::Odometry &odometry_msg){
@@ -71,12 +78,16 @@ void WaypointPlanner::referenceOdometryCallback(const nav_msgs::Odometry &odomet
     double yaw = quat2yaw(odometry_msg.pose.pose.orientation);
     Waypoint & curr_waypoint = waypoints_.front();
 
-    if(squared_dist(curr_position,curr_waypoint)< position_max_error_squared && std::abs(curr_waypoint.yaw - yaw) < yaw_max_error_)
+    double position_error_squared = squared_dist(curr_position,curr_waypoint);
+    const static double c_2pi = 2*M_PI;
+    double yaw_error = std::fmod((std::abs(curr_waypoint.yaw - yaw)+c_2pi),c_2pi);
+
+    if(position_error_squared < position_max_error_squared_ &&  yaw_error < yaw_max_error_)
     {
         waypoints_.push_back(waypoints_.front());
         waypoints_.pop_front();
         Waypoint & next_waypoint = waypoints_.front();
-        ROS_INFO("publishing NEW waypoint %lf:%lf:%lf-%lf",next_waypoint.x, next_waypoint.y, next_waypoint.z,next_waypoint.yaw);
+        ROS_WARN("publishing NEW waypoint: %lf :: %lf :: %lf :: %lf",next_waypoint.x, next_waypoint.y, next_waypoint.z,next_waypoint.yaw/kDEG_2_RAD);
         trajectory_msgs::MultiDOFJointTrajectory trajectory_msg;
           trajectory_msg.header.stamp = ros::Time::now();
           Eigen::Vector3d desired_position(next_waypoint.x, next_waypoint.y, next_waypoint.z);
@@ -84,8 +95,8 @@ void WaypointPlanner::referenceOdometryCallback(const nav_msgs::Odometry &odomet
         mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position,
               desired_yaw, &trajectory_msg);
         pose_command_pub_.publish(trajectory_msg);
-    }
-
+    }else
+      ROS_INFO_STREAM("squared_dist to destination " << position_error_squared << " :  yaw diff" << yaw_error);
 
     return;
 }
@@ -110,6 +121,8 @@ int main(int argc, char** argv)
 
   WaypointPlanner planner(0.1,1.0);
 
+  
+
   ros::NodeHandle nh;
   std::string filename_waypoints;
   if (nh.getParam("/filename_waypoints", filename_waypoints)) {
@@ -118,7 +131,7 @@ int main(int argc, char** argv)
     double x, y, z, yaw;
     char eater;//eats commas
     while (file >> x >> eater >> y >> eater >> z >> eater >> yaw) {
-      planner.waypoints_.push_back(Waypoint(x, y, z, yaw));
+      planner.waypoints_.push_back(Waypoint(x, y, z, yaw*kDEG_2_RAD));
       if (file.eof()) {
         break;
       }
