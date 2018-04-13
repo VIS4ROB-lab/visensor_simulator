@@ -8,7 +8,7 @@ find_package(catkin_simple REQUIRED)
 catkin_simple()
 
 cs_add_executable(waypoint_planner src/waypoint_planner.cc)
-cs_add_executable(ros_backend_node src/ros_backend_node.cc)
+cs_add_executable(ros_backend_node src/ros_backend_node.cc include/visensor_simulator/logger.h include/visensor_simulator/simple_waypoint_planner.h)
 
 
 cs_install()
