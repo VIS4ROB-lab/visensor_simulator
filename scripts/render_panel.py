@@ -172,21 +172,20 @@ class RosPose:
     p = []
     q_BlenderRos = mathutils.Quaternion([0,1,0,0]) # converting from ros to blender is a 180 rotation around x
     timestamp = 0
-    def convertRos2Blender(self):
-        q.rotate(self.q_BlenderRos)
+    
     def transformed(self, rhs ):
-        result = RosPose()
-        rotated_q_self =self.q.copy()
-        rotated_q_self.rotate(rhs.q)
-        result.q = rotated_q_self
+        result = RosPose()        
+        result.q = self.q * rhs.q
+        
         rotated_p_rhs = rhs.p.copy()
         rotated_p_rhs.rotate(self.q)
         result.p = self.p + rotated_p_rhs
         return result
 
-    def __init__(self, position=mathutils.Vector((0,0,0)), orientation = mathutils.Quaternion([1,0,0,0])):
+    def __init__(self, position=mathutils.Vector((0,0,0)), orientation = mathutils.Quaternion([1,0,0,0]),timestamp=0):
         self.q = orientation
         self.p = position
+        self.timestamp = timestamp
         
     def __str__(self):
         return str(self.p) + " " + str(self.q)
@@ -298,12 +297,15 @@ class VISimRenderOperator(bpy.types.Operator):
         cam = bpy.data.objects['cam0']
         
         imu_quat = mathutils.Quaternion([1,0,0,0])
-        imu_vec = mathutils.Vector((5,0,0))#*mathutils.Quaternion([0,1,0,0])
+        imu_vec = mathutils.Vector((1,0,0))#*mathutils.Quaternion([0,1,0,0])
+        b2r_quat = mathutils.Quaternion([0,1,0,0])   
+        qc45x_quat = mathutils.Quaternion([0.924,0.383,0,0]) 
+        downlooking_quat = mathutils.Quaternion([0, -0.7071067811865475, 0.7071067811865476, 0])
         
         cquat = mathutils.Quaternion([0.5,0.5,-0.5,0.5])
-        cvec = mathutils.Vector((0,0,1))
+        cvec = mathutils.Vector((0,0,0))
         rpose = RosPose(imu_vec,imu_quat)
-        cpose = RosPose(cvec,cquat)
+        cpose = RosPose(cvec,downlooking_quat*b2r_quat)
         repose = rpose.transformed(cpose)
         print(rpose)
         print(cpose)
