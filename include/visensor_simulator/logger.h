@@ -76,7 +76,6 @@ public:
         if(imu_file.is_open() && pose_file.is_open())
         {
             is_valid_ = true;
-            imu_file << "test" << std::endl;
         }
         else
         {

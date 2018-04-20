@@ -3,12 +3,11 @@
   <arg name="mav_name" default="firefly"/>
   <arg name="enable_logging" default="false" />
   <arg name="enable_ground_truth" default="true" />
-  <arg name="waypoint_file" default="$(find visensor_simulator)/resources/waypoints8.txt" />
+  <arg name="project_folder"  />
   <arg name="log_file" default="$(arg mav_name)" />
 
   <group ns="$(arg mav_name)">
-    <param name="/filename_waypointss" value="$(arg waypoint_file)"/>
-    <node name="planner" pkg="visensor_simulator" type="ros_backend_node" output="screen">
+    <node name="backend" pkg="visensor_simulator" type="ros_backend_node" output="screen" args="$(arg project_folder)">
       <remap from="imu_frame_odometry_topic" to="ground_truth/odometry" />
       <remap from="imu_topic" to="vi_sensor/imu" />
       <remap from="command/trajectory" to="command/trajectory" />

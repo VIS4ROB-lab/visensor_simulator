@@ -15,6 +15,8 @@
 #include <visensor_simulator/logger.h>
 #include <visensor_simulator/simple_waypoint_planner.h>
 
+#include <boost/filesystem.hpp>
+
 using namespace ros;
 
 #define STRING_ENUM(value) case RosBackendNode::value: os << "Current state: " << #value; break;
@@ -23,7 +25,7 @@ using namespace ros;
 class RosBackendNode{
 public:
     RosBackendNode();
-    void run();
+    void run(std::string project_folder);
     ~RosBackendNode(){}
     enum SimulationState{
         NoMission,
@@ -61,12 +63,12 @@ std::ostream& operator<<( std::ostream& os, const RosBackendNode::SimulationStat
 {
     switch( state )
     {
-        STRING_ENUM(NoMission)
-        STRING_ENUM(GoingToStart)
-        STRING_ENUM(InStartPose)
-        STRING_ENUM(StartingRecording)
-        STRING_ENUM(InMission)
-        STRING_ENUM(StopingRecording)
+    STRING_ENUM(NoMission)
+            STRING_ENUM(GoingToStart)
+            STRING_ENUM(InStartPose)
+            STRING_ENUM(StartingRecording)
+            STRING_ENUM(InMission)
+            STRING_ENUM(StopingRecording)
     }
 }
 
@@ -170,20 +172,45 @@ void RosBackendNode::referenceOdometryCallback(const nav_msgs::Odometry &odometr
     return;
 }
 
-void RosBackendNode::run()
+void RosBackendNode::run( std::string project_folder )
 {
 
-    nh_private_.setParam("filename_waypoints", "/home/lucas/catkin_ws/src/visensor_simulator/resources/waypoints.txt"); //for debug
+    boost::filesystem::path project_folder_path(project_folder);
 
-    //open waypoints file
-    std::string filename_waypoints;
-    if (!nh_private_.getParam("filename_waypoints", filename_waypoints)) {
-        ROS_ERROR("\"~filename_waypoints\" parameter not provided");
+    if(!boost::filesystem::exists(project_folder_path))
+    {
+        ROS_ERROR_STREAM("the project folder does not exists :" << project_folder_path.c_str());
         return;
     }
 
-    if(!simple_planner_.loadWaypointsFromFile(filename_waypoints)){
-        ROS_ERROR("\"~filename_waypoints\" parameter is invalid");
+    boost::filesystem::path waypoints_path = project_folder_path / "waypoints.txt";
+    boost::filesystem::path output_folder_path = project_folder_path / "1_Rotors";
+
+
+    if(!boost::filesystem::exists(waypoints_path))
+    {
+        ROS_ERROR_STREAM("the project folder does not have a waypoints.txt file :" << waypoints_path.c_str());
+        return;
+    }
+
+    if(!boost::filesystem::exists(output_folder_path))
+    {
+        if(!boost::filesystem::create_directory(output_folder_path))
+        {
+            ROS_ERROR_STREAM("the output folder could not be created :" << output_folder_path.c_str());
+            return;
+        }
+    }else{
+        ROS_ERROR_STREAM("the output folder already exist - please delete it :" << output_folder_path.c_str());
+        return;
+    }
+
+
+
+    //open waypoints file
+
+    if(!simple_planner_.loadWaypointsFromFile(waypoints_path.c_str())){
+        ROS_ERROR("waypoints.txt file is invalid");
         return;
     }
 
@@ -199,7 +226,7 @@ void RosBackendNode::run()
 
     // start to record
 
-    logger_.startLogger("/home/lucas/tmp/test_logger");
+    logger_.startLogger(output_folder_path.c_str());
 
     setState(StartingRecording);
 
@@ -210,9 +237,9 @@ void RosBackendNode::run()
         loop_rate.sleep();
     }
 
-    //    // start vi-slam rotine
+    // start vi-slam rotine
     //TODO
-    //    // start mission
+    // start mission
 
     setState(InMission);
 
@@ -221,17 +248,27 @@ void RosBackendNode::run()
         loop_rate.sleep();
     }
 
-    //    // stop to record
+    // stop to record
     setState(StopingRecording);
 
     logger_.stop();
-    //    // end
+    // end
 
 }
 
 int main(int argc, char** argv)
 {
+    if(argc < 2)
+    {
+        printf("The project folder argument is missing.");
+        return 0;
+    }
+
     ros::init(argc, argv, "ros_backend_node");
+
+
+
+    std::string project_folder(argv[1]);
 
     RosBackendNode node;
 
@@ -240,7 +277,7 @@ int main(int argc, char** argv)
     //param use_embeed planner
     //param outputfolder
 
-    node.run();
+    node.run(project_folder);
 
     ROS_INFO("shutting down ros_backend_node");
 
