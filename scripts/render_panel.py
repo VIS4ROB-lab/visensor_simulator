@@ -171,7 +171,7 @@ class RosPose:
     q = []
     p = []
     q_BlenderRos = mathutils.Quaternion([0,1,0,0]) # converting from ros to blender is a 180 rotation around x
-    timestamp = 0
+    timestamp = ''
     
     def transformed(self, rhs ):
         result = RosPose()        
@@ -182,7 +182,7 @@ class RosPose:
         result.p = self.p + rotated_p_rhs
         return result
 
-    def __init__(self, position=mathutils.Vector((0,0,0)), orientation = mathutils.Quaternion([1,0,0,0]),timestamp=0):
+    def __init__(self, position=mathutils.Vector((0,0,0)), orientation = mathutils.Quaternion([1,0,0,0]),timestamp=''):
         self.q = orientation
         self.p = position
         self.timestamp = timestamp
@@ -196,18 +196,8 @@ class BodyTrajectory:
     poses = []
     
     def __init__(self,csv_parsed_list):
-        for csv_pose in csv_parsed_list:
-            curr_pose = RosPose
-            curr_pose.timestamp = csv_pose[0]
-            
-            curr_pose.p_x = csv_pose[1]
-            curr_pose.p_y = csv_pose[2]
-            curr_pose.p_z = csv_pose[3]
-            curr_pose.q_x = csv_pose[4]
-            curr_pose.q_y = csv_pose[5]
-            curr_pose.q_z = csv_pose[6]
-            curr_pose.q_w = csv_pose[7]
-            
+        for p in csv_parsed_list:
+            curr_pose = RosPose(mathutils.Vector((p[1],p[2],p[3])),mathutils.Quaternion([p[7],p[4],p[5],p[6]]),p[0])
             self.poses.append(curr_pose)
     
     
