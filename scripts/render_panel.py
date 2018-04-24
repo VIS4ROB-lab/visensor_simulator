@@ -3,7 +3,6 @@ import csv
 import mathutils
 import math
 import os
-import time
 import json
 
 
@@ -164,7 +163,26 @@ def create_camera( visim_camera, parent, project_folder,cam_list):
     camera_data.visim_config.project_folder = project_folder
     cam_list[visim_camera.cam_name] = camera_object
     
-def load_trajectory(self, context, filepath):
+def load_trajectory(self, curr_cam_obj, body_trajectory):
+
+    ros2blender_quat = mathutils.Quaternion([0,1,0,0])
+    downlooking_quat_CB = mathutils.Quaternion([0, -0.7071067811865475, 0.7071067811865476, 0])
+    frontlooking_quat_CB = mathutils.Quaternion([0.5, 0.5, -0.5, 0.5])
+    zerolooking_quat =  mathutils.Quaternion([1, 0, 0, 0])
+    cvec = mathutils.Vector((0,0,0))
+    T_BC = RosPose(cvec,downlooking_quat_CB.inverted()*ros2blender_quat)
+    keyframe_counter = 1
+    for T_WB in body_trajectory.poses:
+        #print(T_WB)
+        T_WC = T_WB.transformed(T_BC)
+        bpy.context.scene.frame_set(keyframe_counter)
+                
+        curr_cam_obj.location = T_WC.p
+        curr_cam_obj.keyframe_insert('location')        
+        curr_cam_obj.rotation_mode = "QUATERNION"            
+        curr_cam_obj.rotation_quaternion = T_WC.q
+        curr_cam_obj.keyframe_insert('rotation_quaternion')
+        keyframe_counter = keyframe_counter+1;
     return None
 
 class RosPose:
@@ -197,7 +215,7 @@ class BodyTrajectory:
     
     def __init__(self,csv_parsed_list):
         for p in csv_parsed_list:
-            curr_pose = RosPose(mathutils.Vector((p[1],p[2],p[3])),mathutils.Quaternion([p[7],p[4],p[5],p[6]]),p[0])
+            curr_pose = RosPose(mathutils.Vector((float(p[1]),float(p[2]),float(p[3]))),mathutils.Quaternion([float(p[7]),float(p[4]),float(p[5]),float(p[6])]),p[0])
             self.poses.append(curr_pose)
     
     
@@ -235,6 +253,8 @@ def process_project_file(self, context, filepath):
         poses_filename  = os.path.join(root_output_folder,'output/1_Rotors/pose_data.csv')
         print (poses_filename)
         
+        body_poses_list = []
+        
         try:
             
             with open(poses_filename, 'r') as poses_file_h:
@@ -246,7 +266,7 @@ def process_project_file(self, context, filepath):
             self.report({'ERROR'}, 'pose file could not be opened: '+poses_filename)
             return {'CANCELLED'}
             
-        if body_poses_list.count < 1:
+        if not body_poses_list:
             self.report({'ERROR'}, 'empty pose file ' + poses_filename)
             return {'CANCELLED'}
             
@@ -269,8 +289,8 @@ def process_project_file(self, context, filepath):
             
         
             
-        for curr_cam_obj in cam_list:
-            load_trajectory( curr_cam_obj, body_trajectory  )
+        for curr_cam_name, curr_cam_obj in cam_list.items():                   
+            load_trajectory(self, curr_cam_obj, body_trajectory  )
 
     return {'FINISHED'}
 
@@ -282,38 +302,39 @@ class VISimRenderOperator(bpy.types.Operator):
 
     def execute(self, context):
         print("Hello World")
-        #process_project_file(self,context,'/home/lucas/data/vi-sensor_lite_simulator/project_test/test_project.json')
+        process_project_file(self,context,'/home/lucas/data/vi-sensor_lite_simulator/project_test/test_project.json')
             
         cam = bpy.data.objects['cam0']
         
-        imu_quat = mathutils.Quaternion([1,0,0,0])
-        imu_vec = mathutils.Vector((1,0,0))#*mathutils.Quaternion([0,1,0,0])
-        b2r_quat = mathutils.Quaternion([0,1,0,0])   
-        qc45x_quat = mathutils.Quaternion([0.924,0.383,0,0]) 
-        downlooking_quat = mathutils.Quaternion([0, -0.7071067811865475, 0.7071067811865476, 0])
-        
-        cquat = mathutils.Quaternion([0.5,0.5,-0.5,0.5])
-        cvec = mathutils.Vector((0,0,0))
-        rpose = RosPose(imu_vec,imu_quat)
-        cpose = RosPose(cvec,downlooking_quat*b2r_quat)
-        repose = rpose.transformed(cpose)
-        print(rpose)
-        print(cpose)
-        print(repose)
-        cam.location = repose.p
-        cam.rotation_mode = "QUATERNION"
-        cam.rotation_quaternion = repose.q
-        #cam.keyframe_insert('location')
-#        mat_rot = quat.to_matrix().to_4x4()
-#        mat_trans = mathutils.Matrix.Translation(vec)
-#        mat = mat_trans * mat_rot
-#        print(mat)
+        if False:
+            imu_quat = mathutils.Quaternion([1,0,0,0])
+            imu_vec = mathutils.Vector((1,0,0))#*mathutils.Quaternion([0,1,0,0])
+            b2r_quat = mathutils.Quaternion([0,1,0,0])   
+            qc45x_quat = mathutils.Quaternion([0.924,0.383,0,0]) 
+            downlooking_quat = mathutils.Quaternion([0, -0.7071067811865475, 0.7071067811865476, 0])
+            
+            cquat = mathutils.Quaternion([0.5,0.5,-0.5,0.5])
+            cvec = mathutils.Vector((0,0,0))
+            rpose = RosPose(imu_vec,imu_quat)
+            cpose = RosPose(cvec,downlooking_quat*b2r_quat)
+            repose = rpose.transformed(cpose)
+            print(rpose)
+            print(cpose)
+            print(repose)
+            cam.location = repose.p
+            cam.rotation_mode = "QUATERNION"
+            cam.rotation_quaternion = repose.q
+            #cam.keyframe_insert('location')
+    #        mat_rot = quat.to_matrix().to_4x4()
+    #        mat_trans = mathutils.Matrix.Translation(vec)
+    #        mat = mat_trans * mat_rot
+    #        print(mat)
         
         return {'FINISHED'}
 
     @classmethod
     def poll(cls, context):
-        return context.scene.visim_camera is not None
+        return True #context.scene.visim_camera is not None
 
 
 
