@@ -173,13 +173,12 @@ def load_trajectory(self, curr_cam_obj, body_trajectory):
     T_BC = RosPose(cvec,downlooking_quat_CB.inverted()*ros2blender_quat)
     keyframe_counter = 1
     for T_WB in body_trajectory.poses:
-        #print(T_WB)
         T_WC = T_WB.transformed(T_BC)
         bpy.context.scene.frame_set(keyframe_counter)
-                
         curr_cam_obj.location = T_WC.p
-        curr_cam_obj.keyframe_insert('location')        
-        curr_cam_obj.rotation_mode = "QUATERNION"            
+        curr_cam_obj.keyframe_insert('location')
+        curr_cam_obj.rotation_mode = "QUATERNION"
+        # the rotation_quaternion is the rotation from camera to the parent
         curr_cam_obj.rotation_quaternion = T_WC.q
         curr_cam_obj.keyframe_insert('rotation_quaternion')
         keyframe_counter = keyframe_counter+1;

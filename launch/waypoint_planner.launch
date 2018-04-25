@@ -10,6 +10,7 @@
     <param name="/filename_waypoints" value="$(arg waypoint_file)"/>
     <node name="planner" pkg="visensor_simulator" type="waypoint_planner" output="screen">
       <remap from="reference_odometry_topic" to="ground_truth/odometry" />
+      <remap from="command/trajectory" to="command/gt_trajectory" />
     </node>
   </group>
 </launch>
