@@ -128,7 +128,63 @@ def test_VISimProject():
 ################### core
 
 
+class RosPose:
+    q = []
+    p = []
+    q_BlenderRos = mathutils.Quaternion([0,1,0,0]) # converting from ros to blender is a 180 rotation around x
+    timestamp = ''
+    
+    def transformed(self, rhs ):
+        result = RosPose()        
+        result.q = self.q * rhs.q
+        
+        rotated_p_rhs = rhs.p.copy()
+        rotated_p_rhs.rotate(self.q)
+        result.p = self.p + rotated_p_rhs
+        return result
+
+    def __init__(self, position=mathutils.Vector((0,0,0)), orientation = mathutils.Quaternion([1,0,0,0]),timestamp=''):
+        self.q = orientation
+        self.p = position
+        self.timestamp = timestamp
+        
+    def __str__(self):
+        return str(self.p) + " " + str(self.q)
+
+    
+
+class BodyTrajectory:
+    poses = []
+    
+    def __init__(self,csv_parsed_list):
+        for p in csv_parsed_list:
+            curr_pose = RosPose(mathutils.Vector((float(p[1]),float(p[2]),float(p[3]))),mathutils.Quaternion([float(p[7]),float(p[4]),float(p[5]),float(p[6])]),p[0])
+            self.poses.append(curr_pose)
+    
+
+
+
 class VISimProjectLoader():
+    
+    @staticmethod
+    def load_trajectory(curr_cam_obj, body_trajectory):
+        ros2blender_quat = mathutils.Quaternion([0,1,0,0])
+        ctrans = curr_cam_obj.data.visim_cam_config.imu_camera_translation
+        cquat  =  curr_cam_obj.data.visim_cam_config.imu_camera_quaternion
+        T_BC = RosPose(ctrans,cquat*ros2blender_quat)
+        keyframe_counter = 1
+        for T_WB in body_trajectory.poses:
+            T_WC = T_WB.transformed(T_BC)
+            bpy.context.scene.frame_set(keyframe_counter)
+            curr_cam_obj.location = T_WC.p
+            curr_cam_obj.keyframe_insert('location')
+            curr_cam_obj.rotation_mode = "QUATERNION"
+            # the rotation_quaternion is the rotation from camera to the parent
+            curr_cam_obj.rotation_quaternion = T_WC.q
+            curr_cam_obj.keyframe_insert('rotation_quaternion')
+            keyframe_counter = keyframe_counter+1;
+        return None
+
 
     @staticmethod
     def create_camera( visim_camera, parent,cam_list):
@@ -156,6 +212,41 @@ class VISimProjectLoader():
         camera_data.visim_cam_config.imu_camera_quaternion  = pose[1]
         cam_list[visim_camera.cam_name] = camera_object
         
+
+    @staticmethod
+    def load_trajectories(operator, project_object):
+        
+        poses_filename  = os.path.join(project_object.visim_project_setting.project_folder,'output/1_Rotors/pose_data.csv')
+        print (poses_filename)
+        
+        body_poses_list = []
+        
+        try:
+            
+            with open(poses_filename, 'r') as poses_file_h:
+                next(poses_file_h) #jump first line
+                reader = csv.reader(poses_file_h)
+                body_poses_list = list(reader)
+        except EnvironmentError:
+            print('error')
+            operator.report({'ERROR'}, 'pose file could not be opened: '+poses_filename)
+            return {'CANCELLED'}
+            
+        if not body_poses_list:
+            operator.report({'ERROR'}, 'empty pose file ' + poses_filename)
+            return {'CANCELLED'}
+            
+        body_trajectory = BodyTrajectory(body_poses_list)
+        
+        for child in project_object.children:
+                if child.type == 'CAMERA':
+                    VISimProjectLoader.load_trajectory(child,body_trajectory)
+                else:
+                    operator.report({'ERROR'}, 'Unexpected project child type :'+ str(child.data))
+                    return {'CANCELLED'}
+                    
+        return {'FINISHED'}
+    
     @staticmethod
     def load_project(operator, project_object , filepath = None):
         
@@ -203,6 +294,7 @@ class VISimProjectLoader():
             root_output_folder = os.path.dirname(os.path.abspath(filepath))
             project_object.visim_project_setting.has_config = True
             project_object.visim_project_setting.project_folder = root_output_folder
+            bpy.context.scene.objects.active = project_object
 
         else:
             #delete all children
@@ -210,7 +302,7 @@ class VISimProjectLoader():
                 if child.type == 'CAMERA':
                     bpy.data.cameras.remove(child.data)
                 else:
-                    operator.report({'ERROR'}, 'Unexpected type :'+ str(child.data))
+                    operator.report({'ERROR'}, 'Unexpected project child type :'+ str(child.data))
                     return {'CANCELLED'}
                 #bpy.context.scene.objects.unlink(child)
                 #bpy.data.objects.remove(child)
@@ -221,6 +313,9 @@ class VISimProjectLoader():
 
         for curr_cam in visim_json_project.cameras:
             VISimProjectLoader.create_camera(curr_cam,project_object,cam_list)
+            
+    #    for curr_cam_name, curr_cam_obj in cam_list.items():
+     #       load_trajectory( curr_cam_obj, body_trajectory  )
 
         return {'FINISHED'}
 
@@ -283,6 +378,18 @@ class VISimProjectObjectSetting(bpy.types.PropertyGroup):
         subtype = 'DIR_PATH'
     )
 
+class VISimTrajectoryReloadOperator(bpy.types.Operator):
+    bl_idname = "visim.reload_trajectory"
+    bl_label = "Reload VISim only trajectory"
+
+    def execute(self, context):
+        return VISimProjectLoader.load_trajectories(self,context.object)
+        
+
+    @classmethod
+    def poll(cls, context):
+        return context.object.visim_project_setting.has_config == True
+
 class VISimProjectReloadOperator(bpy.types.Operator):
     bl_idname = "visim.reload_project"
     bl_label = "Reload VISim Project"
@@ -304,7 +411,9 @@ class VISimProjectPanel(bpy.types.Panel):
 
     def draw(self, context):
         #self.layout.prop(context.scene, "visim_camera", expand=True)
-        self.layout.operator(VISimProjectReloadOperator.bl_idname)   
+        self.layout.operator(VISimTrajectoryReloadOperator.bl_idname)
+        self.layout.operator(VISimProjectReloadOperator.bl_idname)
+        
 
 class VISimRenderOperator(bpy.types.Operator):
     bl_idname = "visim.render"
@@ -312,6 +421,7 @@ class VISimRenderOperator(bpy.types.Operator):
 
     def execute(self, context):
         print("Hello World")
+        #todo render        
         return {'FINISHED'}
 
     @classmethod
@@ -358,6 +468,7 @@ def menu_func_import(self, context):
 classes = (
     ImportVISimProj,
     VISimProjectPanel,
+    VISimTrajectoryReloadOperator,
     VISimProjectReloadOperator,
     VISimRenderPanel,
     VISimRenderOperator,
