@@ -6,6 +6,7 @@ import math
 import os
 import time
 import bpy_extras
+import sys
 
 
 bl_info = {
@@ -173,6 +174,9 @@ class VISimProjectLoader():
         cquat  =  curr_cam_obj.data.visim_cam_config.imu_camera_quaternion
         T_BC = RosPose(ctrans,cquat*ros2blender_quat)
         keyframe_counter = 1
+        nposes = len(body_trajectory.poses)
+        last_percent = -1
+        
         for T_WB in body_trajectory.poses:
             T_WC = T_WB.transformed(T_BC)
             bpy.context.scene.frame_set(keyframe_counter)
@@ -183,6 +187,11 @@ class VISimProjectLoader():
             curr_cam_obj.rotation_quaternion = T_WC.q
             curr_cam_obj.keyframe_insert('rotation_quaternion')
             keyframe_counter = keyframe_counter+1;
+            percent = math.floor(100*keyframe_counter/nposes)
+            if percent != last_percent:
+                print("Trajectory loading progress: {}".format(percent), end='\r', flush=True)
+                last_percent = percent
+        print("")
         return None
 
 
@@ -237,13 +246,16 @@ class VISimProjectLoader():
             return {'CANCELLED'}
             
         body_trajectory = BodyTrajectory(body_poses_list)
-        
+        ncamera= len(project_object.children)
+        curr_cam = 0
         for child in project_object.children:
-                if child.type == 'CAMERA':
-                    VISimProjectLoader.load_trajectory(child,body_trajectory)
-                else:
-                    operator.report({'ERROR'}, 'Unexpected project child type :'+ str(child.data))
-                    return {'CANCELLED'}
+            curr_cam +=1
+            print("current camera:{}/{}".format(curr_cam,ncamera))
+            if child.type == 'CAMERA':
+                VISimProjectLoader.load_trajectory(child,body_trajectory)
+            else:
+                operator.report({'ERROR'}, 'Unexpected project child type :'+ str(child.data))
+                return {'CANCELLED'}
                     
         return {'FINISHED'}
     
