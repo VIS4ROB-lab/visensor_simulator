@@ -207,13 +207,13 @@ class VISimProjectLoader():
         else:
             #delete all children
             for child in project_object.children:
-                if child.data == bpy.types.Camera:
+                if child.type == 'CAMERA':
                     bpy.data.cameras.remove(child.data)
                 else:
-                    operator.report({'ERROR'}, 'Unexpected type')
+                    operator.report({'ERROR'}, 'Unexpected type :'+ str(child.data))
                     return {'CANCELLED'}
-                bpy.context.scene.objects.unlink(child)
-                bpy.data.objects.remove(child)
+                #bpy.context.scene.objects.unlink(child)
+                #bpy.data.objects.remove(child)
 
 
 
@@ -283,7 +283,28 @@ class VISimProjectObjectSetting(bpy.types.PropertyGroup):
         subtype = 'DIR_PATH'
     )
 
+class VISimProjectReloadOperator(bpy.types.Operator):
+    bl_idname = "visim.reload_project"
+    bl_label = "Reload VISim Project"
 
+    def execute(self, context):
+        return VISimProjectLoader.load_project(self,context.object)
+        
+
+    @classmethod
+    def poll(cls, context):
+        return context.object.visim_project_setting.has_config == True
+
+class VISimProjectPanel(bpy.types.Panel):
+    bl_idname = "OBJ_PT_visim_project_object_panel"
+    bl_label = "VISim Project"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "object"
+
+    def draw(self, context):
+        #self.layout.prop(context.scene, "visim_camera", expand=True)
+        self.layout.operator(VISimProjectReloadOperator.bl_idname)   
 
 class VISimRenderOperator(bpy.types.Operator):
     bl_idname = "visim.render"
@@ -336,6 +357,8 @@ def menu_func_import(self, context):
 
 classes = (
     ImportVISimProj,
+    VISimProjectPanel,
+    VISimProjectReloadOperator,
     VISimRenderPanel,
     VISimRenderOperator,
     VISimCameraSetting,
