@@ -7,7 +7,7 @@ import os
 import time
 import bpy_extras
 import sys
-
+import shutil
 
 bl_info = {
     "name": "VISim project format",
@@ -191,10 +191,10 @@ class VISimProjectLoader():
         context.scene.camera.hide = False
 
         images_output_folder = os.path.join(project_object.visim_project_setting.project_folder,'output/2_Blender/'+camera_data.visim_cam_config.cam_name)
-        if os.access(images_output_folder, os.R_OK | os.W_OK) :
-            shutil.rmtree(images_output_folder)
+        #if os.access(images_output_folder, os.R_OK | os.W_OK) :
+        #    shutil.rmtree(images_output_folder)
         
-        os.makedirs(images_output_folder)
+        os.makedirs(images_output_folder,exist_ok=True)
             
         scene = context.scene
         scene.render.filepath = os.path.join(images_output_folder,'rgb_########.png')# 8 zeros padding
@@ -491,6 +491,7 @@ class VISimProjectPanel(bpy.types.Panel):
         self.layout.operator(VISimProjectReloadOperator.bl_idname)
         
 
+
 class VISimRaytraceRenderOperator(bpy.types.Operator):
     bl_idname = "visim.blender_render"
     bl_label = "Raytrace Render"
@@ -517,6 +518,16 @@ class VISimOGLRenderOperator(bpy.types.Operator):
         area = bpy.context.window_manager.windows[-1].screen.areas[0]
         area.type = 'VIEW_3D'
         area.spaces[0].region_3d.view_perspective = 'CAMERA'
+        
+        output_folder = os.path.dirname(os.path.abspath(bpy.context.scene.render.filepath))
+        if os.path.exists(output_folder) and os.path.isdir(output_folder):
+            if os.listdir(output_folder):            
+                bpy.context.window_manager.popup_menu(scene_visim_info_replace_files_draw, title="Alert", icon='RADIO')
+        else:
+            self.report({'ERROR'},"Given Output Directory don't exists")
+            return {'FINISHED'}
+        
+        
         bpy.ops.render.opengl('INVOKE_DEFAULT',animation=True)
         return {'FINISHED'}
 
@@ -581,6 +592,9 @@ def scene_visim_camera_poll(self, object):
 
 def scene_visim_camera_update(self, context):
     return VISimProjectLoader.prepare_render(self,context)
+    
+def scene_visim_info_replace_files_draw(self, context):
+    self.layout.label("Attention! The output folder is not empty, mixing render results is dangerous! ")
 
 
 def menu_func_import(self, context):
