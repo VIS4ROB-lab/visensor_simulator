@@ -34,6 +34,7 @@ class VISimCamera():
                           -1, 0, 0, 0,
                           0, 0, -1, 0,
                           0, 0, 0, 1] 
+    #todo add param with the delay between the imu and image
     
     
     
@@ -168,6 +169,63 @@ class BodyTrajectory:
 class VISimProjectLoader():
     
     @staticmethod
+    def prepare_render(operator, context):
+        if context.scene.visim_render_camera is None:
+            scene = context.scene
+            scene.render.filepath = '/tmp/'# point the another place
+        
+        project_object = context.scene.visim_render_camera.parent
+        camera_data = context.scene.visim_render_camera.data
+        
+        #change scene camera
+        context.scene.camera = context.scene.visim_render_camera
+        
+        project_object.hide = True        
+        for child in project_object.children:            
+            if child.type == 'CAMERA':
+                child.hide = True
+            else:
+                operator.report({'ERROR'}, 'Unexpected project child type :'+ str(child.data))
+                return {'CANCELLED'}
+                
+        context.scene.camera.hide = False
+
+        images_output_folder = os.path.join(project_object.visim_project_setting.project_folder,'output/2_Blender/'+camera_data.visim_cam_config.cam_name)
+        if os.access(images_output_folder, os.R_OK | os.W_OK) :
+            shutil.rmtree(images_output_folder)
+        
+        os.makedirs(images_output_folder)
+            
+        scene = context.scene
+        scene.render.filepath = os.path.join(images_output_folder,'rgb_########.png')# 8 zeros padding
+        scene.render.resolution_x = camera_data.visim_cam_config.width
+        scene.render.resolution_y = camera_data.visim_cam_config.height
+        scene.frame_step = camera_data.visim_cam_config.frequency_multiplier
+        
+        #option for PNG
+        scene.render.resolution_percentage = 100
+        scene.render.image_settings.file_format = 'PNG'
+        scene.render.image_settings.color_mode = 'RGB'
+        scene.render.image_settings.color_depth = '8'
+        scene.render.image_settings.compression = 0
+        
+        
+        
+        
+        #options for exr
+        #scene.render.image_settings.file_format = 'OPEN_EXR'
+        # scene.render.image_settings.exr_codec = 'PIZ'
+        # scene.render.image_settings.color_depth = '32'
+        # scene.render.image_settings.color_mode = 'RGB'
+        # scene.render.image_settings.use_zbuffer = True
+        
+        
+        return {'FINISHED'}
+        
+
+        
+    
+    @staticmethod
     def load_trajectory(curr_cam_obj, body_trajectory):
         ros2blender_quat = mathutils.Quaternion([0,1,0,0])
         ctrans = curr_cam_obj.data.visim_cam_config.imu_camera_translation
@@ -207,6 +265,8 @@ class VISimProjectLoader():
         camera_object = bpy.data.objects.new( camera_obj_name, camera_data )
         bpy.context.scene.objects.link( camera_object )
         camera_object.parent = parent
+        camera_object.hide_render = True
+        camera_object.hide = True
     
         #configure
         camera_data.angle = 2*math.atan2( visim_camera.width/2.0,visim_camera.focal_lenght )
@@ -246,6 +306,11 @@ class VISimProjectLoader():
             return {'CANCELLED'}
             
         body_trajectory = BodyTrajectory(body_poses_list)
+        
+        bpy.context.scene.frame_start = 1        
+        bpy.context.scene.frame_end = len(body_trajectory.poses)
+        bpy.context.scene.frame_step = 1        
+        
         ncamera= len(project_object.children)
         curr_cam = 0
         for child in project_object.children:
@@ -298,6 +363,8 @@ class VISimProjectLoader():
             project_object = bpy.data.objects.new( project_name , None )
             project_object.empty_draw_size = 2
             project_object.empty_draw_type = 'PLAIN_AXES'
+            project_object.hide_render = True
+            project_object.hide = True
             #'IPO_BACK'
 
             #add to the current scene
@@ -326,9 +393,6 @@ class VISimProjectLoader():
         for curr_cam in visim_json_project.cameras:
             VISimProjectLoader.create_camera(curr_cam,project_object,cam_list)
             
-    #    for curr_cam_name, curr_cam_obj in cam_list.items():
-     #       load_trajectory( curr_cam_obj, body_trajectory  )
-
         return {'FINISHED'}
 
 class VISimCameraSetting(bpy.types.PropertyGroup):
@@ -427,19 +491,51 @@ class VISimProjectPanel(bpy.types.Panel):
         self.layout.operator(VISimProjectReloadOperator.bl_idname)
         
 
-class VISimRenderOperator(bpy.types.Operator):
-    bl_idname = "visim.render"
-    bl_label = "Render Camera"
+class VISimRaytraceRenderOperator(bpy.types.Operator):
+    bl_idname = "visim.blender_render"
+    bl_label = "Raytrace Render"
 
     def execute(self, context):
-        print("Hello World")
-        #todo render        
+        
+        bpy.ops.render.render('INVOKE_DEFAULT',animation=True)      
+        
         return {'FINISHED'}
 
     @classmethod
     def poll(cls, context):
-        return True #context.scene.visim_camera is not None
+        return context.scene.visim_render_camera is not None
+        
+class VISimOGLRenderOperator(bpy.types.Operator):
+    bl_idname = "visim.opengl_render"
+    bl_label = "OGL Render"
 
+    def execute(self, context):
+        
+        # Call user prefs window
+        bpy.ops.screen.userpref_show('INVOKE_DEFAULT')        
+        # Change area type
+        area = bpy.context.window_manager.windows[-1].screen.areas[0]
+        area.type = 'VIEW_3D'
+        area.spaces[0].region_3d.view_perspective = 'CAMERA'
+        bpy.ops.render.opengl('INVOKE_DEFAULT',animation=True)
+        return {'FINISHED'}
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.visim_render_camera is not None
+
+
+class VISimPrepareRenderOperator(bpy.types.Operator):
+    bl_idname = "visim.prerender"
+    bl_label = "Reload camera"
+
+    def execute(self, context):
+                       
+        return VISimProjectLoader.prepare_render(self,context)
+
+    @classmethod
+    def poll(cls, context):
+        return context.scene.visim_render_camera is not None
 
 
 
@@ -451,8 +547,16 @@ class VISimRenderPanel(bpy.types.Panel):
     bl_context = "render"
 
     def draw(self, context):
-        #self.layout.prop(context.scene, "visim_camera", expand=True)
-        self.layout.operator(VISimRenderOperator.bl_idname)   
+        self.layout.prop(context.scene, "visim_render_camera", expand=True)
+        self.layout.operator(VISimPrepareRenderOperator.bl_idname)   
+        layout = self.layout
+ 
+        layout.label("First row")
+        row = layout.row(align=True)
+        row.alignment = 'EXPAND'
+        row.operator(VISimOGLRenderOperator.bl_idname, icon='RENDER_ANIMATION')
+        row.operator(VISimRaytraceRenderOperator.bl_idname, icon='RENDER_ANIMATION')
+        
 
 class ImportVISimProj(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -472,6 +576,11 @@ class ImportVISimProj(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         return VISimProjectLoader.load_project(self,None,self.filepath)
         #return {'FINISHED'} #read_ros_pose_file(self,context, self.filepath)
 
+def scene_visim_camera_poll(self, object):
+    return object.type == 'CAMERA' and object.data.visim_cam_config.has_config == True
+
+def scene_visim_camera_update(self, context):
+    return VISimProjectLoader.prepare_render(self,context)
 
 
 def menu_func_import(self, context):
@@ -483,7 +592,9 @@ classes = (
     VISimTrajectoryReloadOperator,
     VISimProjectReloadOperator,
     VISimRenderPanel,
-    VISimRenderOperator,
+    VISimPrepareRenderOperator,
+    VISimOGLRenderOperator,
+    VISimRaytraceRenderOperator,
     VISimCameraSetting,
     VISimProjectObjectSetting,
 )
@@ -497,6 +608,7 @@ def register():
 
     bpy.types.Object.visim_project_setting =  bpy.props.PointerProperty(type=VISimProjectObjectSetting)
     bpy.types.Camera.visim_cam_config =  bpy.props.PointerProperty(type=VISimCameraSetting)
+    bpy.types.Scene.visim_render_camera = bpy.props.PointerProperty(type=bpy.types.Object,update=scene_visim_camera_update,poll=scene_visim_camera_poll,name="VISim Camera")
 
 
 def unregister():
@@ -508,6 +620,7 @@ def unregister():
         
     del bpy.types.Object.visim_project_setting
     del bpy.types.Camera.visim_cam_config
+    del bpy.types.Scene.visim_render_camera
 
 
 if __name__ == "__main__":
