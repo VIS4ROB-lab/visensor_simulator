@@ -27,7 +27,7 @@ bl_info = {
 class VISimCamera():
     cam_name = "cam_default"
     focal_lenght = 455
-    frequency_multiplier = 10 # if 10 then it is 10 times SLOWER than the imu that runs at 200Hz
+    frequency_reduction_factor = 99 # if 10 then it is 10 times SLOWER than the imu that runs at 200Hz
     height = 480
     width = 752
     transform_ImuCamera = [0, -1, 0, 0, #frontal camera in ros standard
@@ -42,7 +42,7 @@ class VISimCamera():
         result = {}
         result["cam_name"] = self.cam_name
         result["focal_lenght"] = self.focal_lenght
-        result["frequency_multiplier"] = self.frequency_multiplier
+        result["frequency_reduction_factor"] = self.frequency_reduction_factor
         result["height"] = self.height
         result["width"] = self.width
         result["T_SC"] = self.transform_ImuCamera
@@ -52,7 +52,7 @@ class VISimCamera():
         try:
             self.cam_name = json_dict["cam_name"]
             self.focal_lenght = json_dict["focal_lenght"]
-            self.frequency_multiplier = json_dict["frequency_multiplier"]
+            self.frequency_reduction_factor = json_dict["frequency_reduction_factor"]
             self.height = json_dict["height"]
             self.width = json_dict["width"]
             self.transform_ImuCamera = json_dict["T_SC"]
@@ -172,7 +172,8 @@ class VISimProjectLoader():
     def prepare_render(operator, context):
         if context.scene.visim_render_camera is None:
             scene = context.scene
-            scene.render.filepath = '/tmp/'# point the another place
+            scene.render.filepath = bpy.context.user_preferences.filepaths.temporary_directory# point the another place
+            return {'FINISHED'} 
         
         project_object = context.scene.visim_render_camera.parent
         camera_data = context.scene.visim_render_camera.data
@@ -195,12 +196,12 @@ class VISimProjectLoader():
         #    shutil.rmtree(images_output_folder)
         
         os.makedirs(images_output_folder,exist_ok=True)
-            
+
         scene = context.scene
         scene.render.filepath = os.path.join(images_output_folder,'rgb_########.png')# 8 zeros padding
         scene.render.resolution_x = camera_data.visim_cam_config.width
         scene.render.resolution_y = camera_data.visim_cam_config.height
-        scene.frame_step = camera_data.visim_cam_config.frequency_multiplier
+        bpy.context.scene.frame_step = camera_data.visim_cam_config.frequency_reduction_factor
         
         #option for PNG
         scene.render.resolution_percentage = 100
@@ -209,9 +210,7 @@ class VISimProjectLoader():
         scene.render.image_settings.color_depth = '8'
         scene.render.image_settings.compression = 0
         
-        
-        
-        
+
         #options for exr
         #scene.render.image_settings.file_format = 'OPEN_EXR'
         # scene.render.image_settings.exr_codec = 'PIZ'
@@ -273,6 +272,7 @@ class VISimProjectLoader():
         camera_data.visim_cam_config.has_config = True
         camera_data.visim_cam_config.height = visim_camera.height
         camera_data.visim_cam_config.width = visim_camera.width
+        camera_data.visim_cam_config.frequency_reduction_factor = visim_camera.frequency_reduction_factor        
         camera_data.visim_cam_config.cam_name = visim_camera.cam_name
         L = visim_camera.transform_ImuCamera
         tf = mathutils.Matrix([L[0:4],L[4:8],L[8:12],L[12:16]])
@@ -413,9 +413,9 @@ class VISimCameraSetting(bpy.types.PropertyGroup):
         default=0
     )
     
-    frequency_multiplier = bpy.props.IntProperty(
-        name="Frequency Multiplier",
-        default=10
+    frequency_reduction_factor = bpy.props.IntProperty(
+        name="Frequency Reduction Factor",
+        default=88
     )
     
     cam_name = bpy.props.StringProperty(
@@ -513,7 +513,7 @@ class VISimOGLRenderOperator(bpy.types.Operator):
     def execute(self, context):
         
         # Call user prefs window
-        bpy.ops.screen.userpref_show('INVOKE_DEFAULT')        
+        bpy.ops.screen.userpref_show('INVOKE_DEFAULT')
         # Change area type
         area = bpy.context.window_manager.windows[-1].screen.areas[0]
         area.type = 'VIEW_3D'
@@ -549,7 +549,6 @@ class VISimPrepareRenderOperator(bpy.types.Operator):
         return context.scene.visim_render_camera is not None
 
 
-
 class VISimRenderPanel(bpy.types.Panel):
     bl_idname = "RENDER_PT_visim_render_panel"
     bl_label = "VISim Render"
@@ -567,7 +566,6 @@ class VISimRenderPanel(bpy.types.Panel):
         row.alignment = 'EXPAND'
         row.operator(VISimOGLRenderOperator.bl_idname, icon='RENDER_ANIMATION')
         row.operator(VISimRaytraceRenderOperator.bl_idname, icon='RENDER_ANIMATION')
-        
 
 class ImportVISimProj(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -583,18 +581,21 @@ class ImportVISimProj(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             maxlen=255,  # Max internal buffer length, longer would be clamped.
             )
  
-    def execute(self, context):
-        return VISimProjectLoader.load_project(self,None,self.filepath)
-        #return {'FINISHED'} #read_ros_pose_file(self,context, self.filepath)
+    def execute(self, context):        
+        val = VISimProjectLoader.load_project(self,None,self.filepath)
+        if( val  == {'FINISHED'}):
+            return VISimProjectLoader.load_trajectories(self,context.object)
+        return val        
 
 def scene_visim_camera_poll(self, object):
     return object.type == 'CAMERA' and object.data.visim_cam_config.has_config == True
 
 def scene_visim_camera_update(self, context):
-    return VISimProjectLoader.prepare_render(self,context)
+    VISimProjectLoader.prepare_render(self,context)
+    return None
     
 def scene_visim_info_replace_files_draw(self, context):
-    self.layout.label("Attention! The output folder is not empty, mixing render results is dangerous! ")
+    self.layout.label("The output folder is not empty, mixing render results is dangerous! ")
 
 
 def menu_func_import(self, context):
