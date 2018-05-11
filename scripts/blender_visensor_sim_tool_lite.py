@@ -9,6 +9,7 @@ import bpy_extras
 import sys
 import shutil
 
+
 bl_info = {
     "name": "VISim project format",
     "description": "Import and Render a VIsim project",
@@ -191,14 +192,14 @@ class VISimProjectLoader():
                 
         context.scene.camera.hide = False
 
-        images_output_folder = os.path.join(project_object.visim_project_setting.project_folder,'output/2_Blender/'+camera_data.visim_cam_config.cam_name)
+        images_output_folder = os.path.join(project_object.visim_project_setting.project_folder,'output/2_Blender/'+camera_data.visim_cam_config.cam_name+'_rgbd')
         #if os.access(images_output_folder, os.R_OK | os.W_OK) :
         #    shutil.rmtree(images_output_folder)
         
         os.makedirs(images_output_folder,exist_ok=True)
 
         scene = context.scene
-        scene.render.filepath = os.path.join(images_output_folder,'rgb_########.png')# 8 zeros padding
+        scene.render.filepath = os.path.join(images_output_folder,'bl_############.png')# 10 zeros padding
         scene.render.resolution_x = camera_data.visim_cam_config.width
         scene.render.resolution_y = camera_data.visim_cam_config.height
         bpy.context.scene.frame_step = camera_data.visim_cam_config.frequency_reduction_factor
@@ -427,7 +428,7 @@ class VISimCameraSetting(bpy.types.PropertyGroup):
         name="imu_camera_translation",
         default=[0,0,0],
         subtype= 'TRANSLATION',
-        precision=2
+        precision=3
     )
     
     imu_camera_quaternion = bpy.props.FloatVectorProperty(
@@ -600,6 +601,8 @@ def scene_visim_info_replace_files_draw(self, context):
 
 def menu_func_import(self, context):
     self.layout.operator(ImportVISimProj.bl_idname, text="VISim Project (.json)")
+
+
 
 classes = (
     ImportVISimProj,
