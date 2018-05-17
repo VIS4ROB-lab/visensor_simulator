@@ -184,7 +184,7 @@ void RosBackendNode::run( std::string project_folder )
     }
 
     boost::filesystem::path waypoints_path = project_folder_path / "waypoints.txt";
-    boost::filesystem::path output_folder_path = project_folder_path / "1_Rotors";
+    boost::filesystem::path output_folder_path = project_folder_path / "output/1_Rotors";
 
 
     if(!boost::filesystem::exists(waypoints_path))
@@ -195,7 +195,7 @@ void RosBackendNode::run( std::string project_folder )
 
     if(!boost::filesystem::exists(output_folder_path))
     {
-        if(!boost::filesystem::create_directory(output_folder_path))
+        if(!boost::filesystem::create_directories(output_folder_path))
         {
             ROS_ERROR_STREAM("the output folder could not be created :" << output_folder_path.c_str());
             return;
