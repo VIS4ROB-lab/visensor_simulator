@@ -234,16 +234,18 @@ class VISimProjectLoader():
         keyframe_counter = 1
         nposes = len(body_trajectory.poses)
         last_percent = -1
+        reduction_factor = curr_cam_obj.data.visim_cam_config.frequency_reduction_factor
         
         for T_WB in body_trajectory.poses:
-            T_WC = T_WB.transformed(T_BC)
-            bpy.context.scene.frame_set(keyframe_counter)
-            curr_cam_obj.location = T_WC.p
-            curr_cam_obj.keyframe_insert('location')
-            curr_cam_obj.rotation_mode = "QUATERNION"
-            # the rotation_quaternion is the rotation from camera to the parent
-            curr_cam_obj.rotation_quaternion = T_WC.q
-            curr_cam_obj.keyframe_insert('rotation_quaternion')
+            if (keyframe_counter % reduction_factor == 1):
+                T_WC = T_WB.transformed(T_BC)
+                bpy.context.scene.frame_set(keyframe_counter)
+                curr_cam_obj.location = T_WC.p
+                curr_cam_obj.keyframe_insert('location')
+                curr_cam_obj.rotation_mode = "QUATERNION"
+                # the rotation_quaternion is the rotation from camera to the parent
+                curr_cam_obj.rotation_quaternion = T_WC.q
+                curr_cam_obj.keyframe_insert('rotation_quaternion')
             keyframe_counter = keyframe_counter+1;
             percent = math.floor(100*keyframe_counter/nposes)
             if percent != last_percent:
@@ -519,6 +521,8 @@ class VISimOGLRenderOperator(bpy.types.Operator):
         area = bpy.context.window_manager.windows[-1].screen.areas[0]
         area.type = 'VIEW_3D'
         area.spaces[0].region_3d.view_perspective = 'CAMERA'
+        area.spaces[0].viewport_shade = 'MATERIAL'
+        
         
         output_folder = os.path.dirname(os.path.abspath(bpy.context.scene.render.filepath))
         if os.path.exists(output_folder) and os.path.isdir(output_folder):
