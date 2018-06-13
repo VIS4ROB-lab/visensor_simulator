@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #License (BSD)
+#Copyright (c) 2018, Lucas Teixeira, Vision for Robotics Lab, ETH Zurich, Switzerland
 #Copyright (c) 2014, Paul Furgale, Jérôme Maye and Jörn Rehder, Autonomous Systems Lab, ETH Zurich, Switzerland
 #Copyright (c) 2014, Thomas Schneider, Skybotix AG, Switzerland
 #most code in this file is from kalibr_bagcreater -ethz-asl/kalibr
@@ -126,13 +127,10 @@ def getCamFoldersFromDir(dir):
     return cam_folders
 
 
-def loadImageToRosMsg(camdir,filename):
+def loadImageToRosMsg(timestamp,camdir,filename):
     filepath = os.path.join(camdir, filename)
     image_np = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
     
-    timestamp_nsecs = os.path.splitext(os.path.basename(filename))[0]
-    timestamp = rospy.Time( secs=int(timestamp_nsecs[0:-9]), nsecs=int(timestamp_nsecs[-9:]) )
-
     rosimage = Image()
     rosimage.header.stamp = timestamp
     rosimage.height = image_np.shape[0]
@@ -141,7 +139,7 @@ def loadImageToRosMsg(camdir,filename):
     rosimage.encoding = "mono8"
     rosimage.data = image_np.tostring()
     
-    return rosimage, timestamp
+    return rosimage
 
 def createImuMessge(timestamp_int, omega, alpha):
     timestamp_nsecs = str(timestamp_int)
@@ -219,23 +217,31 @@ if __name__ == "__main__":
         
         print("okkkk " + visim_json_project.name)
         imu_topic = "/" + visim_json_project.name + "/imu"
+        imu_timestamps = list()
         with open(imu_filepath, 'rb') as csvfile:
             reader = csv.reader(csvfile, delimiter=',')
             headers = next(reader, None)
             for row in reader:
                 imumsg, timestamp = createImuMessge(row[0], row[1:4], row[4:7])
                 bag.write("/{0}".format(imu_topic), imumsg, timestamp)
+                imu_timestamps.append(timestamp)
        
         for cam_data in visim_json_project.cameras:
             cam_dirpath = os.path.join(parsed.folder, 'output/2_Blender/' + cam_data.cam_name + '_rgbd')
-            cam_topic = "/" + visim_json_project.name + "/" + cam_data.cam_name
-            cam_image_files = getImageFilesFromDir(cam_dirpath)            
-            image_ids = [int(file[3:-4]) for file in cam_image_files]
-            print(image_ids)
-           # for image_filename in image_files:
-           #     image_msg, timestamp = loadImageToRosMsg(cam_dirpath,image_filename)
-                
-        
+            cam_topic = "/{0}/{1}/image_raw".format(visim_json_project.name,cam_data.cam_name) #"/" + visim_json_project.name + "/" + cam_data.cam_name
+            cam_image_files = getImageFilesFromDir(cam_dirpath)
+            #image_ids = [ for file in cam_image_files]
+            #print(image_ids)
+            for image_filename in cam_image_files:
+                try:
+                    idx = int(image_filename[3:-4])-1
+                    timestamp = imu_timestamps[idx]
+                    timestamp.nsecs +=1
+                    image_msg = loadImageToRosMsg(timestamp,cam_dirpath,image_filename)
+                    bag.write(cam_topic, image_msg, timestamp)
+                except IndexError as e:
+                    print('Index {0} doesnt exist. '.format(idx)+ str(e))
+                        
     finally:
         bag.close()
     
