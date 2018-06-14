@@ -7,6 +7,7 @@
 #most code in this file is from kalibr_bagcreater -ethz-asl/kalibr
 #we only change the input structure to VISim project
 
+from __future__ import print_function
 import rosbag
 import rospy
 from sensor_msgs.msg import Image
@@ -18,6 +19,10 @@ import cv2
 import numpy as np
 import csv
 import json
+import math
+import sys
+
+
 
 
 ## Dataformat for the JSON project
@@ -86,7 +91,7 @@ class VISimProject():
     def toJSON(self):
         result = {}
         result["name"] = self.name
-        result["cameras"] = self.camerasToJSON()
+        result["camfrom __future__ import print_functioneras"] = self.camerasToJSON()
         return result
     
     def fromJSON(self, json_dict):
@@ -187,6 +192,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create a ROS bag using the images and imu data.')
     parser.add_argument('--folder',  metavar='folder', nargs='?', help='VISim Project folder')
     parser.add_argument('--output-bag', metavar='output_bag',  default="output.bag", help='ROS bag file %(default)s')
+    parser.add_argument('--namespace', metavar='namespace',  default="", help='topics namespace')
 
     #print help if no argument is specified
     if len(sys.argv)<2:
@@ -196,6 +202,10 @@ if __name__ == "__main__":
     #parse the args
     parsed = parser.parse_args()
     proj_filepath = os.path.join(parsed.folder, 'visim_project.json')
+    
+    if os.path.isfile(parsed.output_bag) :
+        print('Error: the output file already exists!')                
+        sys.exit()
         
     #create the bag
     try:
@@ -203,9 +213,12 @@ if __name__ == "__main__":
             try:
                 project_data = json.load(json_data)
             except ValueError as e:
-                print('Problem with the JSON file parsing. '+ str(e))                
+                print('Problem with the JSON parsing of project file. '+ str(e))                
                 sys.exit()
                 
+
+        
+            
         bag = rosbag.Bag(parsed.output_bag, 'w')
        
         visim_json_project = VISimProject()
@@ -214,24 +227,32 @@ if __name__ == "__main__":
              sys.exit()
         
         imu_filepath = os.path.join(parsed.folder, 'output/1_Rotors/imu_data.csv')
-        
-        print("okkkk " + visim_json_project.name)
-        imu_topic = "/" + visim_json_project.name + "/imu"
+    
+        namespace = "/{0}".format(parsed.namespace) if parsed.namespace else ""
+
+
+        imu_topic = namespace + "/imu"
         imu_timestamps = list()
+    
         with open(imu_filepath, 'rb') as csvfile:
             reader = csv.reader(csvfile, delimiter=',')
             headers = next(reader, None)
+            print('loading imu data')
             for row in reader:
                 imumsg, timestamp = createImuMessge(row[0], row[1:4], row[4:7])
                 bag.write("/{0}".format(imu_topic), imumsg, timestamp)
                 imu_timestamps.append(timestamp)
-       
+            
+
         for cam_data in visim_json_project.cameras:
             cam_dirpath = os.path.join(parsed.folder, 'output/2_Blender/' + cam_data.cam_name + '_rgbd')
-            cam_topic = "/{0}/{1}/image_raw".format(visim_json_project.name,cam_data.cam_name) #"/" + visim_json_project.name + "/" + cam_data.cam_name
+            cam_topic = namespace + "/{0}/image_raw".format(cam_data.cam_name)
             cam_image_files = getImageFilesFromDir(cam_dirpath)
-            #image_ids = [ for file in cam_image_files]
-            #print(image_ids)
+            
+            print("loading camera: {0}".format(cam_data.cam_name))
+            progress_total = len(cam_image_files)
+            progress_last_percent = -1
+            image_counter = 0
             for image_filename in cam_image_files:
                 try:
                     idx = int(image_filename[3:-4])-1
@@ -240,8 +261,16 @@ if __name__ == "__main__":
                     image_msg = loadImageToRosMsg(timestamp,cam_dirpath,image_filename)
                     bag.write(cam_topic, image_msg, timestamp)
                 except IndexError as e:
-                    print('Index {0} doesnt exist. '.format(idx)+ str(e))
-                        
+                    print('image {0} ignored. Some expected')
+
+                image_counter = image_counter+1;
+                percent = math.floor(100*image_counter/progress_total)
+                if percent != progress_last_percent:
+                    print("progress: {0}/100".format(int(percent)), end='\r')
+                    sys.stdout.flush()
+                    progress_last_percent = percent
+            print("")
+
     finally:
         bag.close()
     

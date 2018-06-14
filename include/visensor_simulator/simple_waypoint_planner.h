@@ -47,7 +47,7 @@ double squared_dist(const geometry_msgs::Point& curr_pos,Waypoint waypoint)
 
 class SimpleWaypointPlanner{
 public:
-    SimpleWaypointPlanner():SimpleWaypointPlanner(0.1,0.3){
+    SimpleWaypointPlanner():SimpleWaypointPlanner(0.2,2){
 
     }
 

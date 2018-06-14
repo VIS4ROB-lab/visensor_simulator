@@ -183,7 +183,7 @@ class VISimProjectLoader():
         context.scene.camera = context.scene.visim_render_camera
         
         project_object.hide = True        
-        for child in project_object.children:            
+        for child in project_object.children:
             if child.type == 'CAMERA':
                 child.hide = True
             else:
