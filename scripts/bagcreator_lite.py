@@ -146,7 +146,7 @@ def loadImageToRosMsg(timestamp,camdir,filename):
     
     return rosimage
 
-def createImuMessge(timestamp_int, omega, alpha):
+def createImuMessge(timestamp_int, alpha, omega):
     timestamp_nsecs = str(timestamp_int)
     timestamp = rospy.Time( int(timestamp_nsecs[0:-9]), int(timestamp_nsecs[-9:]) )
     
