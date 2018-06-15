@@ -240,7 +240,7 @@ if __name__ == "__main__":
             print('loading imu data')
             for row in reader:
                 imumsg, timestamp = createImuMessge(row[0], row[1:4], row[4:7])
-                bag.write("/{0}".format(imu_topic), imumsg, timestamp)
+                bag.write(imu_topic, imumsg, timestamp)
                 imu_timestamps.append(timestamp)
             
 
