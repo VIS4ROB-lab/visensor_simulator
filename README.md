@@ -1,16 +1,16 @@
 VI-Sensor Simulator
 ========================
-The simulation of the VI-Sensor.   This is a very alpha version. No Guarantees.
+The simulation of the VI-Sensor.   This is a alpha version. No Guarantees.
 **Please do not share without the autorization of the author**
 
 License
 ------
-???-- there is copyright code from other libraries. I still have to check or replace them.
+???-- there is copyright code from other libraries.
 
 Installation
 ------
 * Requirements:
-  * ROS Indigo - (http://wiki.ros.org/indigo/Installation/Ubuntu)
+  * ROS Indigo or Kinect - (http://wiki.ros.org/indigo/Installation/Ubuntu)
   * Blender 2.79 or newer- (https://askubuntu.com/questions/110821/how-to-install-blender-from-the-official-website)
 
 * Initialize catkin workspace:
@@ -23,7 +23,8 @@ Installation
 * Get the simulator and dependencies
 ```sh
   $ cd ~/catkin_ws/src
-  $ sudo apt-get install liblapacke-dev python-wstool python-catkin-tools protobuf-compiler libgoogle-glog-dev ros-indigo-joy ros-indigo-octomap-ros
+  $ sudo apt-get install liblapacke-dev python-wstool python-catkin-tools protobuf-compiler libgoogle-glog-dev 
+  $ sudo apt-get install ros-kinetic-joy ros-kinetic-octomap-ros (or ros-indigo-joy ros-indigo-octomap-ros)
   $ git clone git@github.com:catkin/catkin_simple
   $ git clone git@github.com:ethz-asl/rotors_simulator
   $ git clone git@github.com:ethz-asl/mav_comm
@@ -59,9 +60,9 @@ Step-by-step
 5. setup your scene objects and lights
 6. render. OpenGL render is faster, use the Material Shader as Display method.
 
-7. run the bagcreator ( in construction):  
+7. run the bagcreator(namespace is optional):  
 ```sh 
-  $ python bagcreator_lite.py --output-bag your_output.bag --project_folder "/home/lucas/data/test/project_testA"
+  $ python (path to visensor-simulator package)/scripts/bagcreator_lite.py --output your_output.bag --project_folder "/home/lucas/data/test/project_testA" --namespace "firefly"
 ```
 
 Roadmap
@@ -69,5 +70,5 @@ Roadmap
 * write a camera path exporter compatible with our waypoint planner, better if we introduce this on our dataset format
 * change from firefly to neo11
 * develop a software to build a simplified version of the world to allow collision on the simulation. BVH and Octomap are options
-* replace copyright code.
+
 

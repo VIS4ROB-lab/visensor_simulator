@@ -161,38 +161,14 @@ def createImuMessge(timestamp_int, omega, alpha):
     
     return rosimu, timestamp
     
-def lixo():
-    #write imu data 
-    imufiles = getImuCsvFiles(imu_filepath)
-    for imufile in imufiles:
-        topic = os.path.splitext(os.path.basename(imufile))[0]
-        with open(imufile, 'rb') as csvfile:
-            reader = csv.reader(csvfile, delimiter=',')
-            headers = next(reader, None)
-            for row in reader:
-                imumsg, timestamp = createImuMessge(row[0], row[1:4], row[4:7])
-                bag.write("/{0}".format(topic), imumsg, timestamp)
-                
-                 #write images
-    camfolders = getCamFoldersFromDir(parsed.folder)
-    for camfolder in camfolders:
-        camdir = parsed.folder + "/{0}".format(camfolder)
-        image_files = getImageFilesFromDir(camdir)
-        for image_filename in image_files:
-            image_msg, timestamp = loadImageToRosMsg(image_filename)
-            bag.write("/{0}/image_raw".format(camfolder), image_msg, timestamp)
-
-    
-    
-
 
 if __name__ == "__main__":
 
     #setup the argument list
     parser = argparse.ArgumentParser(description='Create a ROS bag using the images and imu data.')
-    parser.add_argument('--folder',  metavar='folder', nargs='?', help='VISim Project folder')
-    parser.add_argument('--output-bag', metavar='output_bag',  default="output.bag", help='ROS bag file %(default)s')
-    parser.add_argument('--namespace', metavar='namespace',  default="", help='topics namespace')
+    parser.add_argument('--project_folder',  metavar='project', nargs='?', help='VISim Project folder')
+    parser.add_argument('--output-bag', metavar='output_bag',  help='output ROS bag file (.bag)')
+    parser.add_argument('--namespace', metavar='namespace',  default="", help='topic namespace(e.g. firefly)')
 
     #print help if no argument is specified
     if len(sys.argv)<2:
@@ -201,7 +177,7 @@ if __name__ == "__main__":
 
     #parse the args
     parsed = parser.parse_args()
-    proj_filepath = os.path.join(parsed.folder, 'visim_project.json')
+    proj_filepath = os.path.join(parsed.project_folder, 'visim_project.json')
     
     if os.path.isfile(parsed.output_bag) :
         print('Error: the output file already exists!')                
@@ -226,7 +202,7 @@ if __name__ == "__main__":
              print( 'Problem with the JSON file parsing. Look in the terminal')
              sys.exit()
         
-        imu_filepath = os.path.join(parsed.folder, 'output/1_Rotors/imu_data.csv')
+        imu_filepath = os.path.join(parsed.project_folder, 'output/1_Rotors/imu_data.csv')
     
         namespace = "/{0}".format(parsed.namespace) if parsed.namespace else ""
 
@@ -245,7 +221,7 @@ if __name__ == "__main__":
             
 
         for cam_data in visim_json_project.cameras:
-            cam_dirpath = os.path.join(parsed.folder, 'output/2_Blender/' + cam_data.cam_name + '_rgbd')
+            cam_dirpath = os.path.join(parsed.project_folder, 'output/2_Blender/' + cam_data.cam_name + '_rgbd')
             cam_topic = namespace + "/{0}/image_raw".format(cam_data.cam_name)
             cam_image_files = getImageFilesFromDir(cam_dirpath)
             
