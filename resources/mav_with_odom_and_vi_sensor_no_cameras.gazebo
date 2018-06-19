@@ -1,20 +1,31 @@
 <?xml version="1.0"?>
 <!--
-    based on rotors example
+    based on asl rotors examples
 -->
-<xacro:arg name="mav_name" default="firefly"/>
-<xacro:arg name="odom_normal_position_noise" default="0.01"/>
-<xacro:arg name="odom_normal_quaternion_noise" default="0.001"/>
-<xacro:arg name="odom_normal_linear_velocity_noise" default="0.001"/>
-<xacro:arg name="odom_normal_angular_velocity_noise" default="0.0001"/>
-
 
 <robot name="$(arg mav_name)" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  
+
+  <!-- TODO(lpt) add support to change all these args in the launch file-->
+  <xacro:arg name="odom_normal_position_noise" default="1.03"/> <!-- m -->
+  <xacro:arg name="odom_normal_quaternion_noise" default="0.05235986666"/> <!-- rad-->
+  <xacro:arg name="odom_normal_linear_velocity_noise" default="1.01"/> <!-- m/s -->
+  <xacro:arg name="odom_normal_angular_velocity_noise" default="0.01745"/> <!-- rad/s -->
+  <xacro:arg name="vi_sensor_position_xyz" default="0.1 0.0 -0.03"/> <!-- m m m -->
+  <xacro:arg name="vi_sensor_orientation_rpy" default="0.0 0.0 0.0"/> <!-- rad rad rad-->
+
+
+
+<!-- ########################################################### -->
+<!-- Dangeous Area, below this point you need more gazebo skills -->
+<!-- ########################################################### -->
 
   <xacro:property name="noise_normal_pos" value="$(arg odom_normal_position_noise)" />
   <xacro:property name="noise_normal_quat" value="$(arg odom_normal_quaternion_noise)" />
   <xacro:property name="noise_normal_linear_vel" value="$(arg odom_normal_linear_velocity_noise)" />
   <xacro:property name="noise_normal_angular_vel" value="$(arg odom_normal_angular_velocity_noise)" />
+
   <!-- Instantiate the mav and define namespace as the arg mav_name-->
   <xacro:include filename="$(find rotors_description)/urdf/$(arg mav_name)_base.xacro" />
 
@@ -49,13 +60,13 @@
     <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
   </xacro:odometry_plugin_macro>
 
-  <!-- Mount a VI-sensor in front of the Firefly. -->
+  <!-- Mount a VI-sensor in front of the mav. -->
   <xacro:vi_sensor_macro
     namespace="${namespace}/vi_sensor"
     parent_link="${namespace}/base_link"
     enable_cameras="false"
     enable_depth="false"
     enable_ground_truth="true">
-    <origin xyz="0.1 0.0 -0.03" rpy="0.0 0.1 0.0" />
+    <origin xyz="$(arg vi_sensor_position_xyz)" rpy="$(arg vi_sensor_orientation_rpy)" />
   </xacro:vi_sensor_macro>
 </robot>
