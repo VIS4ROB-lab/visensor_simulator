@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="mav_name" default="firefly"/>
+
+  <arg name="mav_name" default="firefly"/> <!-- some options:  firefly hummingbird TODO(lpt) add neo11    -->
   <arg name="enable_logging" default="false" />
   <arg name="log_file" default="$(arg mav_name)" />
 
@@ -14,16 +15,29 @@
   <group ns="$(arg mav_name)">
     <include file="$(find rotors_gazebo)/launch/spawn_mav.launch">
       <arg name="mav_name" value="$(arg mav_name)" />
-      <arg name="model" value="$(find visensor_simulator)/resources/$(arg mav_name)_with_vi_sensor_no_cameras.gazebo" />
+      <arg name="model" value="$(find visensor_simulator)/resources/mav_with_odom_and_vi_sensor_no_cameras.gazebo" />
       <arg name="enable_logging" value="$(arg enable_logging)" />
       <arg name="enable_ground_truth" value="true" />
       <arg name="log_file" value="$(arg log_file)"/>
     </include>
   </group>
 
-  <include file="$(find mav_linear_mpc)/launch/mav_linear_mpc_sim.launch">
-     <arg name="mav_name" value="$(arg mav_name)" />
-  </include>
+  <group ns="$(arg mav_name)">
+    <node name="mav_linear_mpc" pkg="mav_linear_mpc" type="mav_linear_mpc_node" respawn="true" clear_params="true" output="screen">
+      <remap from="odometry" to="odometry_sensor1/odometry" />
+      <rosparam file="$(find mav_linear_mpc)/resources/linear_mpc_$(arg mav_name).yaml" />
+      <rosparam file="$(find mav_disturbance_observer)/resources/disturbance_observer_$(arg mav_name).yaml"/>
+      <param name="verbose" value="true" />
+      <param name="use_rc_teleop" value="false" />
+      <param name="reference_frame" value="world" />
+    </node>
+
+    <node name="PID_attitude_controller" pkg="mav_lowlevel_attitude_controller" type="mav_pid_attitude_controller_node" respawn="true" clear_params="true" output="screen">
+      <remap from="odometry" to="ground_truth/odometry" />
+      <rosparam file="$(find mav_lowlevel_attitude_controller)/resources/PID_attitude_$(arg mav_name).yaml" />
+    </node>
+  </group>
+
 
     <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam1" args="set  $(arg mav_name)/mav_linear_mpc roll_max 0.05" />
     <node pkg="dynamic_reconfigure" type="dynparam" name="dynparam2" args="set  $(arg mav_name)/mav_linear_mpc pitch_max 0.05" />

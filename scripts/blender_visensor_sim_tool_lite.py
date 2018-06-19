@@ -204,21 +204,19 @@ class VISimProjectLoader():
         scene.render.resolution_y = camera_data.visim_cam_config.height
         bpy.context.scene.frame_step = camera_data.visim_cam_config.frequency_reduction_factor
         
-        #option for PNG
-        scene.render.resolution_percentage = 100
-        scene.render.image_settings.file_format = 'PNG'
-        scene.render.image_settings.color_mode = 'RGB'
-        scene.render.image_settings.color_depth = '8'
-        scene.render.image_settings.compression = 0
-        
-
-        #options for exr
-        #scene.render.image_settings.file_format = 'OPEN_EXR'
-        # scene.render.image_settings.exr_codec = 'PIZ'
-        # scene.render.image_settings.color_depth = '32'
-        # scene.render.image_settings.color_mode = 'RGB'
-        # scene.render.image_settings.use_zbuffer = True
-        
+        if context.scene.output_image_format == 'PNG':
+            scene.render.resolution_percentage = 100
+            scene.render.image_settings.file_format = 'PNG'
+            scene.render.image_settings.color_mode = 'RGB'
+            scene.render.image_settings.color_depth = '8'
+            scene.render.image_settings.compression = 0
+        else:        
+            scene.render.resolution_percentage = 100
+            scene.render.image_settings.file_format = 'OPEN_EXR'
+            scene.render.image_settings.exr_codec = 'PIZ'
+            scene.render.image_settings.color_depth = '32'
+            scene.render.image_settings.color_mode = 'RGB'
+            scene.render.image_settings.use_zbuffer = True
         
         return {'FINISHED'}
         
@@ -538,7 +536,7 @@ class VISimOGLRenderOperator(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.scene.visim_render_camera is not None
+        return ((context.scene.visim_render_camera is not None) and context.scene.output_image_format == 'PNG') 
 
 
 class VISimPrepareRenderOperator(bpy.types.Operator):
@@ -562,11 +560,13 @@ class VISimRenderPanel(bpy.types.Panel):
     bl_context = "render"
 
     def draw(self, context):
-        self.layout.prop(context.scene, "visim_render_camera", expand=True)
-        self.layout.operator(VISimPrepareRenderOperator.bl_idname)   
-        layout = self.layout
- 
-        layout.label("First row")
+        layout = self.layout        
+        layout.prop(context.scene, "visim_render_camera", expand=True)
+        layout.operator(VISimPrepareRenderOperator.bl_idname)   
+         
+        layout.label("Image format:")
+        layout.prop(context.scene, "output_image_format", expand=True)
+        
         row = layout.row(align=True)
         row.alignment = 'EXPAND'
         row.operator(VISimOGLRenderOperator.bl_idname, icon='RENDER_ANIMATION')
@@ -602,6 +602,10 @@ def scene_visim_camera_update(self, context):
 def scene_visim_info_replace_files_draw(self, context):
     self.layout.label("The output folder is not empty, mixing render results is dangerous! ")
 
+def scene_output_image_format_update(self, context):
+    VISimProjectLoader.prepare_render(self,context)
+    return None
+
 
 def menu_func_import(self, context):
     self.layout.operator(ImportVISimProj.bl_idname, text="VISim Project (.json)")
@@ -631,6 +635,13 @@ def register():
     bpy.types.Object.visim_project_setting =  bpy.props.PointerProperty(type=VISimProjectObjectSetting)
     bpy.types.Camera.visim_cam_config =  bpy.props.PointerProperty(type=VISimCameraSetting)
     bpy.types.Scene.visim_render_camera = bpy.props.PointerProperty(type=bpy.types.Object,update=scene_visim_camera_update,poll=scene_visim_camera_poll,name="VISim Camera")
+    bpy.types.Scene.output_image_format = bpy.props.EnumProperty(
+                    name='Image Output Format',
+                    description='File Format for images.',
+                    items={
+                    ('PNG', 'png', 'Save as png'),
+                    ('OPEN_EXR_MULTILAYER', 'exr (with depth)', 'Save as multilayer exr with z')},
+                    default='PNG',update=scene_output_image_format_update)
 
 
 def unregister():
@@ -643,6 +654,7 @@ def unregister():
     del bpy.types.Object.visim_project_setting
     del bpy.types.Camera.visim_cam_config
     del bpy.types.Scene.visim_render_camera
+    del bpy.types.Scene.output_image_format
 
 
 if __name__ == "__main__":
