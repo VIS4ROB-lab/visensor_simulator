@@ -12,6 +12,7 @@ import rosbag
 import rospy
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import Imu
+from geometry_msgs.msg import PoseStamped
 import ImageFile
 import time, sys, os
 import argparse
@@ -108,17 +109,15 @@ class VISimProject():
 
 def getImageFilesFromDir(dir):
     '''Generates a list of files from the directory'''
-    image_files = list()
-    timestamps = list()
+    image_files = list()    
     if os.path.exists(dir):
         for path, names, files in os.walk(dir):
             for f in files:
-                if os.path.splitext(f)[1] in ['.bmp', '.png', '.jpg']:
+                if os.path.splitext(f)[1] in ['.exr', '.png', '.jpg']:
                     image_files.append( f ) 
                     
-    #sort by timestamp
+    
     image_files = sorted( image_files)
-   # image_files = [file for file in sort_list]
     return image_files
 
 def getCamFoldersFromDir(dir):
@@ -160,6 +159,22 @@ def createImuMessge(timestamp_int, alpha, omega):
     rosimu.linear_acceleration.z = float(alpha[2])
     
     return rosimu, timestamp
+    
+def createGtPoseMessge(timestamp_int, position, orientation):
+    timestamp_nsecs = str(timestamp_int)
+    timestamp = rospy.Time( int(timestamp_nsecs[0:-9]), int(timestamp_nsecs[-9:]) )
+    
+    rospose = PoseStamped()
+    rospose.header.stamp = timestamp
+    rospose.pose.position.x = float(position[0])
+    rospose.pose.position.y = float(position[1])
+    rospose.pose.position.z = float(position[2])
+    rospose.pose.orientation.x = float(orientation[0])
+    rospose.pose.orientation.y = float(orientation[1])
+    rospose.pose.orientation.z = float(orientation[2])
+    rospose.pose.orientation.w = float(orientation[3])
+    
+    return rospose, timestamp
     
 
 if __name__ == "__main__":
@@ -203,12 +218,13 @@ if __name__ == "__main__":
              sys.exit()
         
         imu_filepath = os.path.join(parsed.project_folder, 'output/1_Rotors/imu_data.csv')
+        gtpose_filepath = os.path.join(parsed.project_folder, 'output/1_Rotors/pose_data.csv')
     
         namespace = "/{0}".format(parsed.namespace) if parsed.namespace else ""
 
-
+#add imu msg to the bag
         imu_topic = namespace + "/imu"
-        imu_timestamps = list()
+ #       imu_timestamps = list()
     
         with open(imu_filepath, 'rb') as csvfile:
             reader = csv.reader(csvfile, delimiter=',')
@@ -217,9 +233,22 @@ if __name__ == "__main__":
             for row in reader:
                 imumsg, timestamp = createImuMessge(row[0], row[1:4], row[4:7])
                 bag.write(imu_topic, imumsg, timestamp)
-                imu_timestamps.append(timestamp)
+     #           imu_timestamps.append(timestamp)
+                
+#add gtpose msg to the bag
+        gtpose_topic = namespace + "/ground_truth_imu_pose"
+        pose_timestamps = list()
+        
+        with open(gtpose_filepath, 'rb') as csvfile:
+            reader = csv.reader(csvfile, delimiter=',')
+            headers = next(reader, None)
+            print('loading gt pose data')
+            for row in reader:
+                posemsg, timestamp_pose = createGtPoseMessge(row[0], row[1:4], row[4:8])
+                bag.write(gtpose_topic, posemsg, timestamp_pose)
+                pose_timestamps.append(timestamp_pose)
             
-
+#add image msg to the bag
         for cam_data in visim_json_project.cameras:
             cam_dirpath = os.path.join(parsed.project_folder, 'output/2_Blender/' + cam_data.cam_name + '_rgbd')
             cam_topic = namespace + "/{0}/image_raw".format(cam_data.cam_name)
@@ -232,8 +261,8 @@ if __name__ == "__main__":
             for image_filename in cam_image_files:
                 try:
                     idx = int(image_filename[3:-4])-1
-                    timestamp = imu_timestamps[idx]
-                    timestamp.nsecs +=1
+                    timestamp = pose_timestamps[idx]
+                    timestamp.nsecs +=1 #add one nano second to garanty the image will be sorted after the imu at the same timestamp
                     image_msg = loadImageToRosMsg(timestamp,cam_dirpath,image_filename)
                     bag.write(cam_topic, image_msg, timestamp)
                 except IndexError as e:
