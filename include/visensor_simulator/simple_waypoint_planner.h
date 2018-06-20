@@ -47,7 +47,7 @@ double squared_dist(const geometry_msgs::Point& curr_pos,Waypoint waypoint)
 
 class SimpleWaypointPlanner{
 public:
-    SimpleWaypointPlanner():SimpleWaypointPlanner(0.2,2){
+    SimpleWaypointPlanner():SimpleWaypointPlanner(0.2,5){ // error in 0.2rad(=11.5deg) and meters
 
     }
 
@@ -135,8 +135,12 @@ public:
         double yaw = quat2yaw(curr_pose.orientation);
         const static double c_2pi = 2*M_PI;
         double yaw_error = std::fmod((std::abs(waypoints_.front().yaw - yaw)+c_2pi),c_2pi);
-        if(position_error_squared < position_max_error_squared_ &&  yaw_error < yaw_max_error_)
+	//ROS_ERROR_STREAM("DEGUB error :" << position_error_squared << " "<< position_max_error_squared_ << " "<< yaw_error << " "<< yaw_max_error_);
+        if(position_error_squared < position_max_error_squared_ &&  ((yaw_error < yaw_max_error_)|| (yaw_error > (c_2pi - yaw_max_error_))))
+	{
+            
             return true;
+        }
         return false;
     }
 
