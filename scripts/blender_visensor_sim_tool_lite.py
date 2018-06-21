@@ -27,7 +27,7 @@ bl_info = {
 
 class VISimCamera():
     cam_name = "cam_default"
-    focal_lenght = 455
+    focal_length = 455
     frequency_reduction_factor = 99 # if 10 then it is 10 times SLOWER than the imu that runs at 200Hz
     height = 480
     width = 752
@@ -42,7 +42,7 @@ class VISimCamera():
     def toJSON(self):
         result = {}
         result["cam_name"] = self.cam_name
-        result["focal_lenght"] = self.focal_lenght
+        result["focal_length"] = self.focal_length
         result["frequency_reduction_factor"] = self.frequency_reduction_factor
         result["height"] = self.height
         result["width"] = self.width
@@ -52,7 +52,7 @@ class VISimCamera():
     def fromJSON(self, json_dict):
         try:
             self.cam_name = json_dict["cam_name"]
-            self.focal_lenght = json_dict["focal_lenght"]
+            self.focal_length = json_dict["focal_length"]
             self.frequency_reduction_factor = json_dict["frequency_reduction_factor"]
             self.height = json_dict["height"]
             self.width = json_dict["width"]
@@ -269,7 +269,7 @@ class VISimProjectLoader():
         camera_object.hide = True
     
         #configure
-        camera_data.angle = 2*math.atan2( visim_camera.width/2.0,visim_camera.focal_lenght )
+        camera_data.angle = 2*math.atan2( visim_camera.width/2.0,visim_camera.focal_length )
         camera_data.visim_cam_config.has_config = True
         camera_data.visim_cam_config.height = visim_camera.height
         camera_data.visim_cam_config.width = visim_camera.width

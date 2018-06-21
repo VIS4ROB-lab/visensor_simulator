@@ -29,8 +29,8 @@ import sys
 
 class VISimCamera():
     cam_name = "cam_default"
-    frame_id = ""
-    focal_lenght = 455
+    frame_id = "cam_default"
+    focal_length = 455
     frequency_reduction_factor = 99 # if 10 then it is 10 times SLOWER than the imu that runs at 200Hz
     height = 480
     width = 752
@@ -46,7 +46,7 @@ class VISimCamera():
         result = {}
         result["cam_name"] = self.cam_name
         result["frame_id"] = self.frame_id
-        result["focal_lenght"] = self.focal_lenght
+        result["focal_length"] = self.focal_length
         result["frequency_reduction_factor"] = self.frequency_reduction_factor
         result["height"] = self.height
         result["width"] = self.width
@@ -57,7 +57,7 @@ class VISimCamera():
         #obligatory parameters
         try:
             self.cam_name = json_dict["cam_name"]
-            self.focal_lenght = json_dict["focal_lenght"]
+            self.focal_length = json_dict["focal_length"]
             self.frequency_reduction_factor = json_dict["frequency_reduction_factor"]
             self.height = json_dict["height"]
             self.width = json_dict["width"]
@@ -163,7 +163,7 @@ def createCameraInfoMsg(timestamp, camera_definition):
     cam_info_msg.header.stamp = timestamp
     cam_info_msg.header.frame_id = camera_definition.frame_id
     
-    f = camera_definition.focal_lenght
+    f = camera_definition.focal_length
     center_x = math.floor(camera_definition.width/2.0) + 0.5
     center_y = math.floor(camera_definition.height/2.0) + 0.5
     
