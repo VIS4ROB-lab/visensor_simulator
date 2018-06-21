@@ -23,7 +23,7 @@ Installation
 * Get the simulator and dependencies
 ```sh
   $ cd ~/catkin_ws/src
-  $ sudo apt-get install liblapacke-dev python-wstool python-catkin-tools protobuf-compiler libgoogle-glog-dev 
+  $ sudo apt-get install liblapacke-dev python-wstool python-catkin-tools protobuf-compiler libgoogle-glog-dev libopenexr-dev
   $ sudo apt-get install ros-kinetic-joy ros-kinetic-octomap-ros (or ros-indigo-joy ros-indigo-octomap-ros)
   $ git clone git@github.com:catkin/catkin_simple
   $ git clone git@github.com:ethz-asl/rotors_simulator
@@ -31,6 +31,7 @@ Installation
   $ git clone git@github.com:ethz-asl/eigen_catkin
   $ git clone git@github.com:ethz-asl/glog_catkin
   $ git clone git@github.com:ethz-asl/mav_control_rw
+  $ pip install OpenEXR
   
   $ git clone git@github.com:VIS4ROB-lab/visensor_simulator.git
   $ git checkout lite_v1

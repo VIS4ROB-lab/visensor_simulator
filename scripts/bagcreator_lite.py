@@ -10,11 +10,10 @@
 from __future__ import print_function
 import rosbag
 import rospy
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CameraInfo
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import PoseStamped
-import ImageFile
-import time, sys, os
+import os
 import argparse
 import cv2
 import numpy as np
@@ -30,6 +29,7 @@ import sys
 
 class VISimCamera():
     cam_name = "cam_default"
+    frame_id = ""
     focal_lenght = 455
     frequency_reduction_factor = 99 # if 10 then it is 10 times SLOWER than the imu that runs at 200Hz
     height = 480
@@ -45,6 +45,7 @@ class VISimCamera():
     def toJSON(self):
         result = {}
         result["cam_name"] = self.cam_name
+        result["frame_id"] = self.frame_id
         result["focal_lenght"] = self.focal_lenght
         result["frequency_reduction_factor"] = self.frequency_reduction_factor
         result["height"] = self.height
@@ -53,6 +54,7 @@ class VISimCamera():
         return result
     
     def fromJSON(self, json_dict):
+        #obligatory parameters
         try:
             self.cam_name = json_dict["cam_name"]
             self.focal_lenght = json_dict["focal_lenght"]
@@ -63,6 +65,13 @@ class VISimCamera():
         except KeyError as e:
             print ('KeyError - cam_id {} reason {}'.format(self.cam_name , str(e)))
             return False
+            
+        #optional frame_id
+        try:
+            self.frame_id = json_dict["frame_id"]
+        except KeyError:
+            self.frame_id = self.cam_name
+            
         return True
 
 class VISimProject():
@@ -118,6 +127,7 @@ def getImageFilesFromDir(dir):
                     
     
     image_files = sorted( image_files)
+    extension = os.path.splitext(image_files[0])[1]
     return image_files
 
 def getCamFoldersFromDir(dir):
@@ -131,12 +141,13 @@ def getCamFoldersFromDir(dir):
     return cam_folders
 
 
-def loadImageToRosMsg(timestamp,camdir,filename):
+def loadImageToRosMsg(timestamp,camera_definition,camdir,filename):
     filepath = os.path.join(camdir, filename)
     image_np = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
     
     rosimage = Image()
     rosimage.header.stamp = timestamp
+    rosimage.header.frame_id = camera_definition.frame_id
     rosimage.height = image_np.shape[0]
     rosimage.width = image_np.shape[1]
     rosimage.step = rosimage.width  #only with mono8! (step = width * byteperpixel * numChannels)
@@ -144,6 +155,32 @@ def loadImageToRosMsg(timestamp,camdir,filename):
     rosimage.data = image_np.tostring()
     
     return rosimage
+
+  
+def createCameraInfoMsg(timestamp, camera_definition):
+    
+    cam_info_msg = CameraInfo()
+    cam_info_msg.header.stamp = timestamp
+    cam_info_msg.header.frame_id = camera_definition.frame_id
+    
+    f = camera_definition.focal_lenght
+    center_x = math.floor(camera_definition.width/2.0) + 0.5
+    center_y = math.floor(camera_definition.height/2.0) + 0.5
+    
+    cam_info_msg.width  = camera_definition.width
+    cam_info_msg.height = camera_definition.height
+    k = [f, 0, center_x,
+         0, f, center_y,
+         0, 0,    1.0   ]
+    cam_info_msg.K = k
+    cam_info_msg.P = [k[0], k[1], k[2], 0,
+                      k[3], k[4], k[5], 0,
+                      k[6], k[7], k[8], 0]
+                      
+    cam_info_msg.distortion_model = "plumb_bob"
+    cam_info_msg.D = [0.0] * 5
+
+    return cam_info_msg
 
 def createImuMessge(timestamp_int, alpha, omega):
     timestamp_nsecs = str(timestamp_int)
@@ -195,7 +232,7 @@ if __name__ == "__main__":
     proj_filepath = os.path.join(parsed.project_folder, 'visim_project.json')
     
     if os.path.isfile(parsed.output_bag) :
-        print('Error: the output file already exists!')                
+        print('Error: the output file already exists!')
         sys.exit()
         
     #create the bag
@@ -252,6 +289,7 @@ if __name__ == "__main__":
         for cam_data in visim_json_project.cameras:
             cam_dirpath = os.path.join(parsed.project_folder, 'output/2_Blender/' + cam_data.cam_name + '_rgbd')
             cam_topic = namespace + "/{0}/image_raw".format(cam_data.cam_name)
+            cam_info_topic = namespace + "/{0}/camera_info".format(cam_data.cam_name)
             cam_image_files = getImageFilesFromDir(cam_dirpath)
             
             print("loading camera: {0}".format(cam_data.cam_name))
@@ -263,10 +301,12 @@ if __name__ == "__main__":
                     idx = int(image_filename[3:-4])-1
                     timestamp = pose_timestamps[idx]
                     timestamp.nsecs +=1 #add one nano second to garanty the image will be sorted after the imu at the same timestamp
-                    image_msg = loadImageToRosMsg(timestamp,cam_dirpath,image_filename)
+                    image_msg = loadImageToRosMsg(timestamp,cam_data,cam_dirpath,image_filename)
+                    cam_info_msg = createCameraInfoMsg(timestamp,cam_data)
+                    bag.write(cam_info_topic, cam_info_msg, timestamp)
                     bag.write(cam_topic, image_msg, timestamp)
                 except IndexError as e:
-                    print('image {0} ignored. Some expected')
+                    print('image {0} ignored. Some expected in the end of the sequence'.format(idx))
 
                 image_counter = image_counter+1;
                 percent = math.floor(100*image_counter/progress_total)
