@@ -164,6 +164,7 @@ def loadImageWithOpenEXR(filepath):
     precision = Imath.PixelType(Imath.PixelType.FLOAT)
     Z = image_exr.channel('Z', precision)
     image_depth = np.fromstring(Z, dtype=np.float32)
+    image_depth[image_depth == np.inf] = 0 # conversion: invalid depth in the exr is inf and on ros depth image is 0
     image_depth.shape = (size[1], size[0])
 
     r = convertSRGBToRGB(image_exr.channel('R', precision),size)
