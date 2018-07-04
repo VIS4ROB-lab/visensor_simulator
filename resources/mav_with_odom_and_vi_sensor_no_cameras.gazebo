@@ -5,12 +5,10 @@
 
 <robot name="$(arg mav_name)" xmlns:xacro="http://ros.org/wiki/xacro">
 
-  
-
   <!-- TODO(lpt) add support to change all these args in the launch file-->
-  <xacro:arg name="odom_normal_position_noise" default="1.03"/> <!-- m -->
+  <xacro:arg name="odom_normal_position_noise" default="0.2"/> <!-- m -->
   <xacro:arg name="odom_normal_quaternion_noise" default="0.05235986666"/> <!-- rad-->
-  <xacro:arg name="odom_normal_linear_velocity_noise" default="1.01"/> <!-- m/s -->
+  <xacro:arg name="odom_normal_linear_velocity_noise" default="0.2"/> <!-- m/s -->
   <xacro:arg name="odom_normal_angular_velocity_noise" default="0.01745"/> <!-- rad/s -->
   <xacro:arg name="vi_sensor_position_xyz" default="0.1 0.0 -0.03"/> <!-- m m m -->
   <xacro:arg name="vi_sensor_orientation_rpy" default="0.0 0.0 0.0"/> <!-- rad rad rad-->
