@@ -71,5 +71,9 @@ Roadmap
 * write a camera path exporter compatible with our waypoint planner, better if we introduce this on our dataset format
 * change from firefly to neo11
 * develop a software to build a simplified version of the world to allow collision on the simulation. BVH and Octomap are options
+* better error msg on the bagcreator when it is not possible to create the bagfile
+* expose the simple_planner waypoint tolerance as ros parameters
+* write my owm spawn with noise and vi_sensor pose as parameters
+
 
 
