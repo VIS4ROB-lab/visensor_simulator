@@ -4,8 +4,8 @@
 #Copyright (c) 2018, Lucas Teixeira, Vision for Robotics Lab, ETH Zurich, Switzerland
 #Copyright (c) 2014, Paul Furgale, Jérôme Maye and Jörn Rehder, Autonomous Systems Lab, ETH Zurich, Switzerland
 #Copyright (c) 2014, Thomas Schneider, Skybotix AG, Switzerland
-#most code in this file is from kalibr_bagcreater -ethz-asl/kalibr
-#we only change the input structure to VISim project
+#most code in based on kalibr_bagcreater.py -ethz-asl/kalibr
+
 
 from __future__ import print_function
 import rosbag

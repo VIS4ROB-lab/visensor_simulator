@@ -74,6 +74,7 @@ Roadmap
 * better error msg on the bagcreator when it is not possible to create the bagfile
 * expose the simple_planner waypoint tolerance as ros parameters
 * write my owm spawn with noise and vi_sensor pose as parameters
+* add imu name on the json file
 
 
 
