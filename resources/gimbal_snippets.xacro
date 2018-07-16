@@ -1,16 +1,15 @@
 <?xml version="1.0" ?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
     <xacro:macro name="gimbal_base_joint" params="link_name joint_name child_link visible rpy parent_link *origin">
-        <joint name="gimbal_fix" type="fixed">
+         <joint name="gimbal_fix" type="prismatic"> <!-- prismatic joint with zero limits(default) is a hack for a fixed joint (needed on gazebo7)-->
             <parent link="${parent_link}"/>
             <child link="${link_name}"/>
             <axis xyz="1 0 0"/>
             <dynamics damping="0"/>
-            <dynamics friction="0"/>
+            <dynamics friction="100"/>
             <limit velocity="1e+16" effort="1e+16" />
             <xacro:insert_block name="origin" />
-        </joint>
-        
+        </joint> 
             <link name='${link_name}'>
               <xacro:if value="${visible}">
                 <visual>
@@ -25,14 +24,13 @@
 			<origin xyz="0 0 0" rpy="0 0 0" />
 			<inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
                 </inertial>
-
         </link>
         <joint name="${joint_name}" type="continuous">
             <parent link="${link_name}"/>
             <child link="${child_link}"/>
             <axis xyz="1 0 0"/>
             <dynamics damping="0"/>
-            <dynamics friction="0"/>
+            <dynamics friction="1000"/>
             <limit velocity="1e+16" effort="1e+16" />
             <origin xyz="0 0 0" rpy="${rpy}"/>
         </joint>
@@ -130,18 +128,18 @@
            </xacro:if>
             <inertial>
                 <mass value="1e-5" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
+		<origin xyz="0 0 0" rpy="0 0 0" />
+		<inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
             </inertial>
 
         </link>
         <gazebo >
-            <plugin name="gimbal_controller" filename="libgazebo_poltergeist_gimbal_plugin.so">
+            <plugin name="gimbal_controller" filename="libpoltergeist_gimbal_plugin.so">
                 <robot_namespace>/${namespace}</robot_namespace>                
                 <pitch_joint_name>${namespace}/pitch_joint</pitch_joint_name>
                 <pitch_direction>1</pitch_direction>
                 <pitch_zero>0</pitch_zero>              
-                <gimbal_angular_velocity>0.3</gimbal_angular_velocity>
+                <gimbal_angular_velocity>0.5</gimbal_angular_velocity>
                 <ref_base_link>${parent_link}</ref_base_link>
                 <camera_link>${namespace}/camera_mount_link</camera_link>
             </plugin>
