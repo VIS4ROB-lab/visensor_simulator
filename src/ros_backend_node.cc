@@ -11,6 +11,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
 
+#include <sensor_msgs/Joy.h>
 #include <sensor_msgs/Imu.h>
 #include <visensor_simulator/logger.h>
 #include <visensor_simulator/simple_waypoint_planner.h>
@@ -45,6 +46,7 @@ private:
     ros::Subscriber imu_sub_;
     ros::Subscriber reference_odometry_sub_;
     ros::Publisher pose_command_pub_;
+    ros::Publisher gimbal_command_pub_;
 
     Logger logger_;
     SimpleWaypointPlanner simple_planner_;
@@ -52,7 +54,7 @@ private:
     //Callback functions
     void referenceOdometryCallback(const nav_msgs::Odometry& odometry_msg);
     void imuCallback(const sensor_msgs::ImuConstPtr& msg);
-    void sendPoseCommand(const Eigen::Vector3d &desired_position, const double &desired_yaw);
+    void sendPoseCommand(const Eigen::Vector3d &desired_position, const double &desired_yaw,const float &desired_gimbal_pitch);
     void goNextPose();
 
     void setState(SimulationState state);
@@ -79,6 +81,7 @@ RosBackendNode::RosBackendNode():
     imu_sub_ =  nh_.subscribe("imu_topic", 1000, &RosBackendNode::imuCallback, this);
 
     pose_command_pub_ = nh_.advertise<trajectory_msgs::MultiDOFJointTrajectory>(mav_msgs::default_topics::COMMAND_TRAJECTORY, 1);
+    gimbal_command_pub_ = nh_.advertise<sensor_msgs::Joy>("command/gimbal_actuators", 1);
 
     state_ = NoMission;
 }
@@ -99,21 +102,25 @@ void RosBackendNode::imuCallback(const sensor_msgs::ImuConstPtr& msg)
     logger_.logIMU(imu_measurement);
 }
 
-void RosBackendNode::sendPoseCommand(const Eigen::Vector3d &desired_position,const double &desired_yaw)
+void RosBackendNode::sendPoseCommand(const Eigen::Vector3d &desired_position,const double &desired_yaw,const float &desired_gimbal_pitch)
 {
     trajectory_msgs::MultiDOFJointTrajectory trajectory_msg;
     trajectory_msg.header.stamp = ros::Time::now();
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
-    ROS_WARN("Publishing NEW waypoint: %lf :: %lf :: %lf :: %lf",desired_position.x(), desired_position.y(), desired_position.z(),desired_yaw/kDEG_2_RAD);
+    ROS_WARN("Publishing NEW waypoint: %lf :: %lf :: %lf :: %lf :: %f",desired_position.x(), desired_position.y(), desired_position.z(),desired_yaw/kDEG_2_RAD,desired_gimbal_pitch);
     pose_command_pub_.publish(trajectory_msg);
+    sensor_msgs::Joy gimbal_msg;
+    gimbal_msg.axes= {0.0f,desired_gimbal_pitch,0.0f};
+    gimbal_command_pub_.publish(gimbal_msg);
 }
 
 void RosBackendNode::goNextPose()
 {
     Eigen::Vector3d desired_position;
     double desired_yaw;
-    simple_planner_.getNextWaypoint(desired_position,desired_yaw);
-    sendPoseCommand(desired_position,desired_yaw);
+    float desired_gimbal_pitch;
+    simple_planner_.getNextWaypoint(desired_position,desired_yaw,desired_gimbal_pitch);
+    sendPoseCommand(desired_position,desired_yaw,desired_gimbal_pitch);
 }
 
 void RosBackendNode::setState(RosBackendNode::SimulationState state)

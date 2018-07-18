@@ -12,7 +12,7 @@ import rosbag
 import rospy
 from sensor_msgs.msg import Image, CameraInfo
 from sensor_msgs.msg import Imu
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped,TransformStamped
 import os
 import argparse
 import cv2
@@ -82,6 +82,8 @@ class VISimProject():
     
     cameras=[]
     name="" 
+    imu_frame_id=""
+    imu_name=""
     
     def camerasToJSON(self):
         result = []
@@ -105,12 +107,17 @@ class VISimProject():
     def toJSON(self):
         result = {}
         result["name"] = self.name
+        result["imu_frame_id"] = self.imu_frame_id
+        result["imu_name"] = self.imu_name
+
         result["camfrom __future__ import print_functioneras"] = self.camerasToJSON()
         return result
     
     def fromJSON(self, json_dict):
         try:
             self.name = json_dict["name"]
+            self.imu_frame_id = json_dict["imu_frame_id"]
+            self.imu_name = json_dict["imu_name"]
         except KeyError as e:
             print ("KeyError - in project reason {}".format(str(e)))
             
@@ -287,7 +294,26 @@ def createImuMessge(timestamp_int, alpha, omega):
     
     return rosimu, timestamp
     
-def createGtPoseMessge(timestamp_int, position, orientation):
+def createGtTransformStampedMessage(parent_frame, child_frame, timestamp_int, position, orientation):
+    timestamp_nsecs = str(timestamp_int)
+    timestamp = rospy.Time( int(timestamp_nsecs[0:-9]), int(timestamp_nsecs[-9:]) )
+    
+    rospose = TransformStamped()
+    rospose.header.stamp = timestamp
+    rospose.header.frame_id = parent_frame
+    rospose.child_frame_id = child_frame
+
+    rospose.transform.translation.x = float(position[0])
+    rospose.transform.translation.y = float(position[1])
+    rospose.transform.translation.z = float(position[2])
+    rospose.transform.rotation.x = float(orientation[0])
+    rospose.transform.rotation.y = float(orientation[1])
+    rospose.transform.rotation.z = float(orientation[2])
+    rospose.transform.rotation.w = float(orientation[3])
+    
+    return rospose, timestamp
+
+def createGtPoseMessage(timestamp_int, position, orientation):
     timestamp_nsecs = str(timestamp_int)
     timestamp = rospy.Time( int(timestamp_nsecs[0:-9]), int(timestamp_nsecs[-9:]) )
     
@@ -309,8 +335,9 @@ if __name__ == "__main__":
     #setup the argument list
     parser = argparse.ArgumentParser(description='Create a ROS bag using the images and imu data.')
     parser.add_argument('--project_folder',  metavar='project', nargs='?', help='VISim Project folder')
-    parser.add_argument('--output-bag', metavar='output_bag',  help='output ROS bag file (.bag)')
+    parser.add_argument('--output_bag', metavar='output_bag',  help='output ROS bag file (.bag)')
     parser.add_argument('--namespace', metavar='namespace',  default="", help='topic namespace(e.g. firefly)')
+    parser.add_argument('--gray_image', help='the published image will be in grayscale(mono8)', action='store_true')
 
     #print help if no argument is specified
     if len(sys.argv)<2:
@@ -336,8 +363,11 @@ if __name__ == "__main__":
                 
 
         
-            
-        bag = rosbag.Bag(parsed.output_bag, 'w')
+        try:    
+            bag = rosbag.Bag(parsed.output_bag, 'w')
+        except IOError as e:
+            print('Error to create the bag JSON file, check with your output path is correct and if you have write permission on the folder. '+ str(e))                
+            sys.exit()
        
         visim_json_project = VISimProject()
         if (visim_json_project.fromJSON(project_data) == False):            
@@ -350,7 +380,7 @@ if __name__ == "__main__":
         namespace = "/{0}".format(parsed.namespace) if parsed.namespace else ""
 
 #add imu msg to the bag
-        imu_topic = namespace + "/imu"
+        imu_topic = namespace + "/"+ visim_json_project.imu_name
  #       imu_timestamps = list()
     
         with open(imu_filepath, 'rb') as csvfile:
@@ -371,7 +401,7 @@ if __name__ == "__main__":
             headers = next(reader, None)
             print('loading gt pose data')
             for row in reader:
-                posemsg, timestamp_pose = createGtPoseMessge(row[0], row[1:4], row[4:8])
+                posemsg, timestamp_pose = createGtTransformStampedMessage("blender",visim_json_project.imu_frame_id,row[0], row[1:4], row[4:8])
                 bag.write(gtpose_topic, posemsg, timestamp_pose)
                 pose_timestamps.append(timestamp_pose)
             
