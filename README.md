@@ -63,7 +63,7 @@ Step-by-step
 
 7. run the bagcreator(namespace is optional):  
 ```sh 
-  $ python (path to visensor-simulator package)/scripts/bagcreator_lite.py --output your_output.bag --project_folder "/home/lucas/data/test/project_testA" --namespace "firefly"
+  $ python (path to visensor-simulator package)/scripts/bagcreator_lite.py --output_bag your_output.bag --project_folder "/home/lucas/data/test/project_testA" --namespace "firefly"
 ```
 
 Roadmap

@@ -150,8 +150,8 @@ def getCamFoldersFromDir(dir):
                     cam_folders.append((folder[-4:],folder))
     return cam_folders
 
-def loadImageWithOpenCV(filepath):
-    image_np = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)        
+def loadBGRImageWithOpenCV(filepath):
+    image_np = cv2.imread(filepath, cv2.IMREAD_COLOR) #BGR     
     return image_np
 
 def convertSRGBToRGB(img_str,size):
@@ -178,31 +178,27 @@ def loadImageWithOpenEXR(filepath):
     g = convertSRGBToRGB(image_exr.channel('G', precision),size)
     b = convertSRGBToRGB(image_exr.channel('B', precision),size)
                 
-    image_rgb = np.asarray(Im.merge("RGB", [r,g,b]))
+    image_bgr = np.asarray(Im.merge("BGR", [b,g,r]))
     
-    return image_rgb, image_depth
+    return image_bgr, image_depth
 
-def loadImagesToRosMsg(timestamp,camera_definition,camdir,filename):
+def loadImagesToRosMsg(timestamp,camera_definition,camdir,filename,force_gray):
     filepath = os.path.join(camdir, filename)
     extension = os.path.splitext(filepath)[1]
     image_msgs = list()
+    image_bgr_np =""
     if(extension in ['.png','.jpeg','.jpg']):
-        image_rgb_np = loadImageWithOpenCV(filepath)
-        image_msgs.append(['image_raw',createCameraRGBMsg(timestamp,image_rgb_np,camera_definition.frame_id)])
+        image_bgr_np = loadBGRImageWithOpenCV(filepath)
         
     elif (extension == '.exr'):
-        image_rgb_np, image_depth_np = loadImageWithOpenEXR(filepath)
-        image_msgs.append(['image_raw',createCameraRGBMsg(timestamp,image_rgb_np,camera_definition.frame_id)])
+        image_bgr_np, image_depth_np = loadImageWithOpenEXR(filepath)
         image_msgs.append(['image_depth',createCameraDepthMsg(timestamp,image_depth_np,camera_definition.frame_id)])
-        
-#    rosimage = Image()
-#    rosimage.header.stamp = timestamp
-#    rosimage.header.frame_id = camera_definition.frame_id
-#    rosimage.height = image_rgb_np.shape[0]
-#    rosimage.width = image_rgb_np.shape[1]
-#    rosimage.step = rosimage.width  #only with mono8! (step = width * byteperpixel * numChannels)
-#    rosimage.encoding = "mono8"
-#    rosimage.data = image_rgb_np.tostring()
+
+    if(force_gray):
+        image_gray_np = cv2.cvtColor(image_bgr_np, cv2.COLOR_BGR2GRAY)
+        image_msgs.append(['image_raw',createCameraGrayMsg(timestamp,image_gray_np,camera_definition.frame_id)])
+    else:
+        image_msgs.append(['image_raw',createCameraRGBMsg(timestamp,image_bgr_np,camera_definition.frame_id)])    
     
     return image_msgs
 
@@ -225,7 +221,7 @@ def createCameraRGBMsg(timestamp, image_rgb,frame_id):
     rosimage.height = image_rgb.shape[0]
     rosimage.width = image_rgb.shape[1]
     rosimage.step = rosimage.width * 1  * 3 #(step = width * byteperpixel * numChannels)
-    rosimage.encoding = "rgb8"
+    rosimage.encoding = "bgr8"
     rosimage.data = image_rgb.tostring()
     
     return rosimage
@@ -241,19 +237,7 @@ def createCameraDepthMsg(timestamp, image_depth,frame_id):
     rosimage.data = image_depth.tostring()
     
     return rosimage
-    
-#def createCameraGrayMsg(timestamp, image_rgb,frame_id):
-#    rosimage = Image()
-#    rosimage.header.stamp = timestamp
-#    rosimage.header.frame_id = frame_id
-#    rosimage.height = image_rgb.shape[0]
-#    rosimage.width = image_rgb.shape[1]
-#    rosimage.step = rosimage.width  # (step = width * byteperpixel * numChannels)
-#    rosimage.encoding = "mono8"
-#    rosimage.data = image_rgb.tostring()
-#    
-#    return rosimage
-  
+ 
 def createCameraInfoMsg(timestamp, camera_definition):
     
     cam_info_msg = CameraInfo()
@@ -381,7 +365,6 @@ if __name__ == "__main__":
 
 #add imu msg to the bag
         imu_topic = namespace + "/"+ visim_json_project.imu_name
- #       imu_timestamps = list()
     
         with open(imu_filepath, 'rb') as csvfile:
             reader = csv.reader(csvfile, delimiter=',')
@@ -390,7 +373,7 @@ if __name__ == "__main__":
             for row in reader:
                 imumsg, timestamp = createImuMessge(row[0], row[1:4], row[4:7])
                 bag.write(imu_topic, imumsg, timestamp)
-     #           imu_timestamps.append(timestamp)
+
                 
 #add gtpose msg to the bag
         gtpose_topic = namespace + "/ground_truth_imu_pose"
@@ -408,7 +391,6 @@ if __name__ == "__main__":
 #add image msg to the bag
         for cam_data in visim_json_project.cameras:
             cam_dirpath = os.path.join(parsed.project_folder, 'output/2_Blender/' + cam_data.cam_name + '_rgbd')
- #           cam_topic = namespace + "/{0}/image_raw".format(cam_data.cam_name)
             cam_info_topic = namespace + "/{0}/camera_info".format(cam_data.cam_name)
             cam_image_files = getImageFilesFromDir(cam_dirpath)
             
@@ -421,14 +403,13 @@ if __name__ == "__main__":
                     idx = int(image_filename[3:-4])-1
                     timestamp = pose_timestamps[idx]
                     timestamp.nsecs +=1 #add one nano second to garanty the image will be sorted after the imu at the same timestamp
-                    image_msgs = loadImagesToRosMsg(timestamp,cam_data,cam_dirpath,image_filename)
+                    image_msgs = loadImagesToRosMsg(timestamp,cam_data,cam_dirpath,image_filename,parsed.gray_image)
                     cam_info_msg = createCameraInfoMsg(timestamp,cam_data)
                     bag.write(cam_info_topic, cam_info_msg, timestamp)
                     for curr_img_msg in image_msgs:
                         curr_topic = namespace + "/{0}/{1}".format(cam_data.cam_name,curr_img_msg[0])
                         bag.write(curr_topic, curr_img_msg[1], timestamp)
-                        
-                   # bag.write(cam_topic, image_msg, timestamp)
+
                 except IndexError as e:
                     print('image {0} ignored. Some expected in the end of the sequence'.format(idx))
 
