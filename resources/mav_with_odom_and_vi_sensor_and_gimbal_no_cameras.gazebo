@@ -3,7 +3,7 @@
     based on asl rotors examples
 -->
 
-<robot name="$(arg mav_name)" xmlns:xacro="http://www.ros.org/wiki/xacro">
+<robot name="$(arg mav_name)" xmlns:xacro="http://ros.org/wiki/xacro">
 
   <!-- TODO(lpt) add support to change all these args in the launch file-->
   <xacro:arg name="odom_normal_position_noise" default="0.2"/> <!-- m -->

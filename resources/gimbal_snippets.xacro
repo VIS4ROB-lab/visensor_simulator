@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
     <xacro:macro name="gimbal_base_joint" params="link_name joint_name child_link visible rpy parent_link *origin">
          <joint name="gimbal_fix" type="prismatic"> <!-- prismatic joint with zero limits(default) is a hack for a fixed joint (needed on gazebo7)-->
             <parent link="${parent_link}"/>
@@ -114,9 +114,9 @@
 
     <xacro:macro name="bottom_1D_gimbal" params="namespace parent_link *origin visible">
 
-        <gimbal_base_joint  joint_name="${namespace}/pitch_joint" link_name="${namespace}/gimbal_base_link" child_link="${namespace}/camera_mount_link" visible="${visible}" rpy="0 0 ${pi/2}" parent_link="${parent_link}">
+        <xacro:gimbal_base_joint  joint_name="${namespace}/pitch_joint" link_name="${namespace}/gimbal_base_link" child_link="${namespace}/camera_mount_link" visible="${visible}" rpy="0 0 ${pi/2}" parent_link="${parent_link}">
             <xacro:insert_block name="origin" /> 
-        </gimbal_base_joint>
+        </xacro:gimbal_base_joint>
         <link name='${namespace}/camera_mount_link'>
           <xacro:if value="${visible}">
             <visual >
