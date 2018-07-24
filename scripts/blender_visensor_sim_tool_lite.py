@@ -14,7 +14,7 @@ bl_info = {
     "name": "VISim project format",
     "description": "Import and Render a VIsim project",
     "author": "Lucas Teixeira",
-    "version": (0, 1),
+    "version": (0, 3),
     "blender": (2, 79, 0),
     "location": "File > Import-Export",
     "warning": "", # used for warning icon and text in addons panel
@@ -172,8 +172,7 @@ class VISimProjectLoader():
     @staticmethod
     def prepare_render(operator, context):
         if context.scene.visim_render_camera is None:
-            scene = context.scene
-            scene.render.filepath = bpy.context.user_preferences.filepaths.temporary_directory# point the another place
+            context.scene.render.filepath = bpy.context.user_preferences.filepaths.temporary_directory# point the another place
             return {'FINISHED'} 
         
         project_object = context.scene.visim_render_camera.parent

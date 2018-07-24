@@ -160,8 +160,8 @@ def convertSRGBToRGB(img_str,size):
                 (img*12.92)*255.0,
                 (1.055*(img**(1.0/2.4))-0.055) * 255.0)
     img.shape = (size[1], size[0])
-
-    return Im.fromarray(img,'F').convert("L")
+	
+    return img.astype(np.uint8) #Im.fromarray(img,'F').convert("L")
    
     
 def loadImageWithOpenEXR(filepath):    
@@ -178,7 +178,7 @@ def loadImageWithOpenEXR(filepath):
     g = convertSRGBToRGB(image_exr.channel('G', precision),size)
     b = convertSRGBToRGB(image_exr.channel('B', precision),size)
                 
-    image_bgr = np.asarray(Im.merge("BGR", [b,g,r]))
+    image_bgr = cv2.merge([b, g, r]) # np.asarray(Im.merge("BGR", [b,g,r]))
     
     return image_bgr, image_depth
 
