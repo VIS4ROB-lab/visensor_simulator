@@ -63,7 +63,7 @@ Step-by-step
 
 7. run the bagcreator(namespace is optional):  
 ```sh 
-  $ python (path to visensor-simulator package)/scripts/bagcreator_lite.py --output your_output.bag --project_folder "/home/lucas/data/test/project_testA" --namespace "firefly"
+  $ python (path to visensor-simulator package)/scripts/bagcreator_lite.py --output_bag your_output.bag --project_folder "/home/lucas/data/test/project_testA" --namespace "firefly"
 ```
 
 Roadmap
@@ -74,6 +74,11 @@ Roadmap
 * better error msg on the bagcreator when it is not possible to create the bagfile
 * expose the simple_planner waypoint tolerance as ros parameters
 * write my owm spawn with noise and vi_sensor pose as parameters
+* add imu name on the json file
+* add script to render without gui - https://www.blender.org/forum/viewtopic.php?t=19102
+* autoselect a camera from the json
+* add option to disable the simple planner
+* detect incomplete render sequence and jump to the latest one (support in case of shutdown)
 
 
 

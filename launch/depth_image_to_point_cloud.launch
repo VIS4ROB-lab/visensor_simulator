@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="namespace" default="firefly"/>
+  <arg name="nodelet_name" default="gerente"  />
+  <arg name="cam_name" default="cam0"  />
+  
+<node pkg="nodelet" type="nodelet" name="$(arg nodelet_name)"  args="manager"/>
+  <!-- group ns="$(arg namespace)" -->
+    
+  <node pkg="nodelet" type="nodelet" name="cloudifyasd"
+        args="load depth_image_proc/point_cloud_xyzrgb $(arg nodelet_name)">
+	    <remap from="depth_registered/image_rect" to="$(arg cam_name)/image_depth"/>
+	    <!--remap from="depth_registered/points" to="camera/depth_registered/points"/-->
+	    <remap from="rgb/image_rect_color" to="$(arg cam_name)/image_raw"/>
+	    <remap from="rgb/camera_info" to="$(arg cam_name)/camera_info"/>
+  </node>
+  <!-- /group -->
+</launch>

@@ -12,11 +12,12 @@ const  float kDEG_2_RAD = M_PI / 180.0;
 
 
 struct Waypoint{
-    double x;
-    double y;
-    double z;
-    double yaw;
-    Waypoint(double x_p, double y_p, double z_p, double yaw_p):x(x_p),y(y_p),z(z_p),yaw(yaw_p){}
+    double x; //m
+    double y; //m
+    double z; //m
+    double yaw; //rad
+    float gimbal_pitch; //deg
+    Waypoint(double x_p, double y_p, double z_p, double yaw_p, float gimbal_pitch_p):x(x_p),y(y_p),z(z_p),yaw(yaw_p),gimbal_pitch(gimbal_pitch_p){}
 };
 
 
@@ -47,18 +48,18 @@ double squared_dist(const geometry_msgs::Point& curr_pos,Waypoint waypoint)
 
 class SimpleWaypointPlanner{
 public:
-    SimpleWaypointPlanner():SimpleWaypointPlanner(0.2,5){ // error in 0.2rad(=11.5deg) and meters
+    SimpleWaypointPlanner():SimpleWaypointPlanner(0.2,2){ // error in 0.2rad(=11.5deg) and meters- these numbers need to be proportinal to the noise in the odometry used as input.
 
     }
 
     SimpleWaypointPlanner(double yaw_max_error, double position_max_error):is_valid_(false),yaw_max_error_(yaw_max_error),position_max_error_squared_(position_max_error*position_max_error){
 
         //sample trajectory
-        waypoints_.push_back(Waypoint(1,-5,2,0));
-        waypoints_.push_back(Waypoint(1,5,2,0));
-        waypoints_.push_back(Waypoint(2,5,2,0));
-        waypoints_.push_back(Waypoint(2,-5,2,0));
-        waypoints_.push_back(Waypoint(1,-5,2,0));
+        waypoints_.push_back(Waypoint(1,-5,2,0,0));
+        waypoints_.push_back(Waypoint(1,5,2,0,0));
+        waypoints_.push_back(Waypoint(2,5,2,0,0));
+        waypoints_.push_back(Waypoint(2,-5,2,0,0));
+        waypoints_.push_back(Waypoint(1,-5,2,0,0));
         status_ = STARTING;
     }
     ~SimpleWaypointPlanner(){}
@@ -70,10 +71,11 @@ public:
         std::ifstream file(filepath);
         if(file.is_open()){
 
-            double x, y, z, yaw;
+            double x, y, z, yaw ;
+            float gimbal_pitch;
             char eater;//eats commas
-            while (file >> x >> eater >> y >> eater >> z >> eater >> yaw) {
-                waypoints_.push_back(Waypoint(x, y, z, yaw*kDEG_2_RAD));
+            while (file >> x >> eater >> y >> eater >> z >> eater >> yaw >> eater >> gimbal_pitch) {
+                waypoints_.push_back(Waypoint(x, y, z, yaw*kDEG_2_RAD,gimbal_pitch));
                 if (file.eof()) {
                     break;
                 }
@@ -87,13 +89,14 @@ public:
         return false;
     }
 
-    bool getNextWaypoint( Eigen::Vector3d &desired_position, double &desired_yaw)
+    bool getNextWaypoint( Eigen::Vector3d &desired_position, double &desired_yaw, float &desired_gimbal_pitch)
     {
         if(waypoints_.size() > 0)
         {
             Eigen::Vector3d position(waypoints_.front().x, waypoints_.front().y, waypoints_.front().z);
             desired_position = position;
             desired_yaw =  waypoints_.front().yaw;
+	    desired_gimbal_pitch = waypoints_.front().gimbal_pitch;
             return true;
         }
         return false;
@@ -126,7 +129,7 @@ public:
         return status_;
     }
 
-    bool reachedNextWaypoint(const geometry_msgs::Pose& curr_pose)
+    bool reachedNextWaypoint(const geometry_msgs::Pose& curr_pose)// do not consider the gimbal position
     {
         if(waypoints_.size() == 0)
             return true;//nowhere to go

@@ -7,7 +7,8 @@
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="$(find rotors_gazebo)/worlds/basic.world" />
-    <!-- <arg name="debug" value="true"/> -->
+    <arg name="debug" value="false"/>
+    <arg name="verbose" value="false"/> 
     <arg name="paused" value="false"/>
     <!-- <arg name="gui" value="false"/> -->
   </include>
@@ -15,7 +16,7 @@
   <group ns="$(arg mav_name)">
     <include file="$(find rotors_gazebo)/launch/spawn_mav.launch">
       <arg name="mav_name" value="$(arg mav_name)" />
-      <arg name="model" value="$(find visensor_simulator)/resources/mav_with_odom_and_vi_sensor_no_cameras.gazebo" />
+      <arg name="model" value="$(find visensor_simulator)/resources/mav_with_odom_and_vi_sensor_and_gimbal_no_cameras.gazebo" />
       <arg name="enable_logging" value="$(arg enable_logging)" />
       <arg name="enable_ground_truth" value="true" />
       <arg name="log_file" value="$(arg log_file)"/>

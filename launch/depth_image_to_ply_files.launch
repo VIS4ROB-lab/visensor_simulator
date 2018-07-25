@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<launch>
+
+<arg name="bag_file" default="/home/lucas/catkin_ws/src/visensor_simulator/scripts/output8.bag"/> 
+<arg name="cam_name" default="cam0"/>
+<arg name="namespace" default=""/>
+<arg name="output_folder" default="/home/lucas/catkin_ws/src/visensor_simulator/scripts/output_ptcloud"/>
+
+  <!-- Play bag file containing point clouds -->
+  <node pkg="rosbag" type="play" name="bag_player" output="screen" args="--delay=5 -r 0.1 --clock $(arg bag_file)"/>
+
+<node pkg="nodelet" type="nodelet" name="input_manager"  args="manager"/>
+  <!-- group ns="$(arg namespace)" -->
+    
+  <node pkg="nodelet" type="nodelet" name="cloudify"
+        args="load depth_image_proc/point_cloud_xyzrgb input_manager">
+	    <remap from="depth_registered/image_rect" to="$(arg namespace)/$(arg cam_name)/image_depth"/>
+	    <remap from="depth_registered/points" to="$(arg namespace)/$(arg cam_name)/point_cloud"/>
+	    <remap from="rgb/image_rect_color" to="$(arg cam_name)/image_raw"/>
+	    <remap from="rgb/camera_info" to="$(arg cam_name)/camera_info"/>
+  </node>
+  
+  <!-- Write point clouds to file -->
+  <node pkg="point_cloud_io" type="write" name="write" output="screen" if="false">
+    <param name="topic"                  value="$(arg namespace)/$(arg cam_name)/point_cloud" />
+    <param name="folder_path"            value="$(arg output_folder)" />
+    <param name="file_prefix"            value="" />
+    <param name="file_ending"            value="ply" />
+    <param name="add_counter_to_path"    value="false" />
+    <param name="add_stamp_nsec_to_path" value="true" />
+  </node>
+    
+  <!-- Visualize the point cloud in rviz -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find point_cloud_io)/examples/point_cloud_io.rviz" />
+    
+</launch>
