@@ -11,10 +11,10 @@ import shutil
 
 
 bl_info = {
-    "name": "VISim project format",
-    "description": "Import and Render a VIsim project",
+    "name": "VISensor Simulator project format",
+    "description": "Import and Render a VISensor Simulator project",
     "author": "Lucas Teixeira",
-    "version": (0, 3),
+    "version": (0, 4),
     "blender": (2, 79, 0),
     "location": "File > Import-Export",
     "warning": "", # used for warning icon and text in addons panel
@@ -494,7 +494,7 @@ class VISimProjectPanel(bpy.types.Panel):
 
 class VISimRaytraceRenderOperator(bpy.types.Operator):
     bl_idname = "visim.blender_render"
-    bl_label = "Raytrace Render"
+    bl_label = "Blender Render"
 
     def execute(self, context):
         
@@ -508,7 +508,7 @@ class VISimRaytraceRenderOperator(bpy.types.Operator):
         
 class VISimOGLRenderOperator(bpy.types.Operator):
     bl_idname = "visim.opengl_render"
-    bl_label = "OGL Render"
+    bl_label = "Quick Render"
 
     def execute(self, context):
         
@@ -574,7 +574,7 @@ class VISimRenderPanel(bpy.types.Panel):
 class ImportVISimProj(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
     bl_idname = "import_vi_sim_proj.read_data"  
-    bl_label = "Import VISim Project"
+    bl_label = "Import VISensor Simulator Project"
 
     # ImportHelper mixin class uses this
     filename_ext = ".json"
@@ -607,7 +607,7 @@ def scene_output_image_format_update(self, context):
 
 
 def menu_func_import(self, context):
-    self.layout.operator(ImportVISimProj.bl_idname, text="VISim Project (.json)")
+    self.layout.operator(ImportVISimProj.bl_idname, text="VISensor Simulator Project (.json)")
 
 
 

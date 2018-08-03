@@ -1,9 +1,13 @@
-# Render all cameras or cameras containing text given with command line argument "cameras".
-# Example:
-# Let's say test.blend file contains cameras "east.01", "east.02", "west.01", "west.02"
-# By executing command "blender -b your_file.blend -P render_all_cameras.py" all 4 cameras will be rendered.
-# Command "blender -b your_file.blend -P render_all_cameras.py  cameras=east" will render "east.01" and "east.02" cameras.
-# Command "blender -b your_file.blend -P render_all_cameras.py  cameras=01" will render "east.01" and "west.01.02" cameras.
+# The following is an updated version of http://www.blender.org/forum/viewtopic.php?t=19102
+# Author: baze from blender.org/forum
+# 
+# Render all cameras or cameras containing text given with command line argument "cameras". 
+# Example: 
+# Let's say test.blend file contains cameras "east.01", "east.02", "west.01", "west.02" 
+# By executing command "blender -b your_file.blend -P render_all_cameras.py" all 4 cameras will be rendered. 
+# Command "blender -b your_file.blend -P render_all_cameras.py  cameras=east" will render "east.01" and "east.02" cameras. 
+# Command "blender -b your_file.blend -P render_all_cameras.py  cameras=01" will render "east.01" and "west.01.02" cameras. 
+
 #/home/lucas/bin/blender-2.79b/blender -b  /home/lucas/data/vi-dataset/vi-test/plane-test_l.blend -P  /home/lucas/catkin_ws/src/visensor_simulator/scripts/blender_render_no_gui.py
 #/home/lucas/bin/blender-2.79b-linux-glibc219-x86_64/blender -b  /home/lucas/visensor-simulator/plane-test_l.blend  -P  /home/lucas/visensor-simulator/blender_render_no_gui.py
 
