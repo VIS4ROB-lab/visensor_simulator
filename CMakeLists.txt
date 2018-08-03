@@ -21,6 +21,9 @@ cs_add_executable(ros_backend_node src/ros_backend_node.cc include/visensor_simu
 cs_add_library(poltergeist_gimbal_plugin src/gazebo_poltergeist_gimbal_plugin.cpp)
 target_link_libraries(poltergeist_gimbal_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
+catkin_install_python(PROGRAMS scripts/visensor_sim_bagcreator.py
+                      DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
 cs_install()
 
 cs_export()
