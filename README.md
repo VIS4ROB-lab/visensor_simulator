@@ -34,16 +34,17 @@ Installation
   $ pip install OpenEXR
   
   $ git clone git@github.com:VIS4ROB-lab/visensor_simulator.git
-  $ git checkout lite_v1
+  $ git checkout devel
 
 
 ```
 * Build the workspace  
 ```sh
-  $ catkin build
+  $ catkin build visensor_simulator
 ```
 
-* Import the script "blender_visensor_sim_tool_lite.py" as an add-on in your blender (https://blender.stackexchange.com/questions/1688/installing-an-addon)
+* Import the script "visensor_simulator/scripts/blender/visensor_sim_blender_addon.py" as an add-on in your blender (https://blender.stackexchange.com/questions/1688/installing-an-addon)
+
 
 Step-by-step
 ------
@@ -57,13 +58,13 @@ Step-by-step
 ```sh
   $ roslaunch visensor_simulator ros_backend.launch project_folder:="/home/lucas/data/test/project_testA"
 ```
-4. open blender, select the camera, file->import->VISim Project(*json), choose the file visim_project.json on your project
-5. setup your scene objects and lights
-6. render. OpenGL render is faster, use the Material Shader as Display method.
+4. open your scene on blender, select the camera, file->import->VISensor Simulator Project(*json), choose the file visim_project.json on your project.
 
-7. run the bagcreator(namespace is optional):  
+5. Render. Quick render is faster, but it is less realistic.
+
+6. run the bagcreator(namespace is optional):  
 ```sh 
-  $ python (path to visensor-simulator package)/scripts/bagcreator_lite.py --output_bag your_output.bag --project_folder "/home/lucas/data/test/project_testA" --namespace "firefly"
+  $ rosrun visensor_simulator visensor_sim_bagcreator.py --output_bag your_output.bag --project_folder "/home/lucas/data/test/project_testA" --namespace "firefly"
 ```
 
 Roadmap
@@ -75,10 +76,10 @@ Roadmap
 * expose the simple_planner waypoint tolerance as ros parameters
 * write my owm spawn with noise and vi_sensor pose as parameters
 * add imu name on the json file
-* add script to render without gui - https://www.blender.org/forum/viewtopic.php?t=19102
 * autoselect a camera from the json
 * add option to disable the simple planner
 * detect incomplete render sequence and jump to the latest one (support in case of shutdown)
+* make everything relative to the project file instead of the project folder
 
 
 
