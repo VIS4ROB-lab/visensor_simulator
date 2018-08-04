@@ -16,7 +16,10 @@ include_directories(${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE
 
 catkin_simple()
 
-cs_add_executable(ros_backend_node src/ros_backend_node.cc include/visensor_simulator/logger.h include/visensor_simulator/simple_waypoint_planner.h)
+FILE(GLOB_RECURSE LibFiles "include/*.h")
+add_custom_target(headers SOURCES ${LibFiles})
+
+cs_add_executable(ros_backend_node src/main.cc src/ros_backend_node.cc src/simple_waypoint_planner.cc)
 
 cs_add_library(poltergeist_gimbal_plugin src/gazebo_poltergeist_gimbal_plugin.cpp)
 target_link_libraries(poltergeist_gimbal_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})

@@ -15,6 +15,8 @@
 #include <sensor_msgs/Imu.h>
 #include <visensor_simulator/logger.h>
 #include <visensor_simulator/simple_waypoint_planner.h>
+#include <visensor_simulator/ros_backend_node.h>
+#include <visensor_simulator/logger.h>
 
 #include <boost/filesystem.hpp>
 
@@ -22,44 +24,6 @@ using namespace ros;
 
 #define STRING_ENUM(value) case RosBackendNode::value: os << "Current state: " << #value; break;
 
-
-class RosBackendNode{
-public:
-    RosBackendNode();
-    void run(std::string project_folder);
-    ~RosBackendNode(){}
-    enum SimulationState{
-        NoMission,
-        GoingToStart,
-        InStartPose,
-        InitializationRotine,
-        StartingRecording,
-        InMission,
-        StopingRecording
-    };
-private:
-
-
-    //ROS publishers and subscribers
-    ros::NodeHandle nh_;
-    ros::NodeHandle nh_private_;
-    ros::Subscriber imu_sub_;
-    ros::Subscriber reference_odometry_sub_;
-    ros::Publisher pose_command_pub_;
-    ros::Publisher gimbal_command_pub_;
-
-    Logger logger_;
-    SimpleWaypointPlanner simple_planner_;
-
-    //Callback functions
-    void referenceOdometryCallback(const nav_msgs::Odometry& odometry_msg);
-    void imuCallback(const sensor_msgs::ImuConstPtr& msg);
-    void sendPoseCommand(const Eigen::Vector3d &desired_position, const double &desired_yaw,const float &desired_gimbal_pitch);
-    void goNextPose();
-
-    void setState(SimulationState state);
-    SimulationState state_;
-};
 
 std::ostream& operator<<( std::ostream& os, const RosBackendNode::SimulationState& state )
 {
@@ -74,9 +38,11 @@ std::ostream& operator<<( std::ostream& os, const RosBackendNode::SimulationStat
     }
 }
 
+
 RosBackendNode::RosBackendNode():
     nh_private_("~")
 {
+    logger_ = new Logger();
     reference_odometry_sub_ =  nh_.subscribe("imu_frame_odometry_topic", 1000, &RosBackendNode::referenceOdometryCallback, this);
     imu_sub_ =  nh_.subscribe("imu_topic", 1000, &RosBackendNode::imuCallback, this);
 
@@ -99,7 +65,7 @@ void RosBackendNode::imuCallback(const sensor_msgs::ImuConstPtr& msg)
 
     imu_measurement.timestamp = msg->header.stamp;
 
-    logger_.logIMU(imu_measurement);
+    logger_->logIMU(imu_measurement);
 }
 
 void RosBackendNode::sendPoseCommand(const Eigen::Vector3d &desired_position,const double &desired_yaw,const float &desired_gimbal_pitch)
@@ -107,7 +73,7 @@ void RosBackendNode::sendPoseCommand(const Eigen::Vector3d &desired_position,con
     trajectory_msgs::MultiDOFJointTrajectory trajectory_msg;
     trajectory_msg.header.stamp = ros::Time::now();
     mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
-    ROS_WARN("Publishing NEW waypoint: %lf :: %lf :: %lf :: %lf :: %f",desired_position.x(), desired_position.y(), desired_position.z(),desired_yaw/kDEG_2_RAD,desired_gimbal_pitch);
+    //TODO por de volta ROS_WARN("Publishing NEW waypoint: %lf :: %lf :: %lf :: %lf :: %f",desired_position.x(), desired_position.y(), desired_position.z(),desired_yaw/kDEG_2_RAD,desired_gimbal_pitch);
     pose_command_pub_.publish(trajectory_msg);
     sensor_msgs::Joy gimbal_msg;
     gimbal_msg.axes= {0.0f,desired_gimbal_pitch,0.0f};
@@ -141,7 +107,7 @@ void RosBackendNode::referenceOdometryCallback(const nav_msgs::Odometry &odometr
                                           ,odometry_msg.pose.pose.orientation.z);
 
     pose.timestamp = odometry_msg.header.stamp;
-    logger_.logPose(pose);
+    logger_->logPose(pose);
 
     if(state_ == InMission ){
         if(simple_planner_.step(odometry_msg.pose.pose))
@@ -233,7 +199,7 @@ void RosBackendNode::run( std::string project_folder )
 
     // start to record
 
-    logger_.startLogger(output_folder_path.c_str());
+    logger_->startLogger(output_folder_path.c_str());
 
     setState(StartingRecording);
 
@@ -258,35 +224,11 @@ void RosBackendNode::run( std::string project_folder )
     // stop to record
     setState(StopingRecording);
 
-    logger_.stop();
+    logger_->stop();
     // end
 
 }
 
-int main(int argc, char** argv)
-{
-    if(argc < 2)
-    {
-        printf("The project folder argument is missing.");
-        return 0;
-    }
-
-    ros::init(argc, argv, "ros_backend_node");
-
-
-
-    std::string project_folder(argv[1]);
-
-    RosBackendNode node;
-
-    ROS_INFO("ros_backend_node started");
-
-    //param use_embeed planner
-    //param outputfolder
-
-    node.run(project_folder);
-
-    ROS_INFO("shutting down ros_backend_node");
-
-    return 0;
+RosBackendNode::~RosBackendNode(){
+    delete logger_;
 }
