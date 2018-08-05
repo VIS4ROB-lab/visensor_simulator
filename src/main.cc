@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <visensor_simulator/ros_backend_node.h>
+#include <visensor_simulator/simple_waypoint_planner.h>
 
 
 using namespace ros;

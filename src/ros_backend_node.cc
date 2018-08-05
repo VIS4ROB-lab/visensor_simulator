@@ -1,26 +1,17 @@
 
-#include <fstream>
 #include <list>
+#include <fstream>
+#include <boost/filesystem.hpp>
 
 #include <ros/ros.h>
-#include <mav_msgs/common.h>
-#include <nav_msgs/Odometry.h>
-#include <mav_msgs/conversions.h>
-#include <mav_msgs/default_topics.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <visualization_msgs/MarkerArray.h>
-
-
-#include <sensor_msgs/Joy.h>
 #include <sensor_msgs/Imu.h>
-#include <visensor_simulator/logger.h>
-#include <visensor_simulator/simple_waypoint_planner.h>
-#include <visensor_simulator/ros_backend_node.h>
-#include <visensor_simulator/logger.h>
-#include <visensor_simulator/ros_backend_node.h>
+#include <nav_msgs/Odometry.h>
+#include <geometry_msgs/PoseStamped.h>
 
 
-#include <boost/filesystem.hpp>
+#include <visensor_simulator/logger.h>
+#include <visensor_simulator/builtin_planner.h>
+#include <visensor_simulator/ros_backend_node.h>
 
 using namespace ros;
 
@@ -31,17 +22,18 @@ std::ostream& operator<<( std::ostream& os, const RosBackendNode::SimulationStat
 {
   switch( state )
   {
-  STRING_ENUM(WAINTING_PLANNER)
+      STRING_ENUM(INVALID)
+      STRING_ENUM(WAINTING_PLANNER)
       STRING_ENUM(RECORDING)
       STRING_ENUM(FINISHED)
   }
 }
 
 
-RosBackendNode::RosBackendNode(BuiltInPlanner *planner):
-  nh_private_("~"),planner_(planner)
+
+RosBackendNode::RosBackendNode(BuiltInPlanner *planner):planner_(planner)
 {
-  simulation_state_ = WAINTING_PLANNER;
+  simulation_state_ = INVALID;
 
   logger_ = new Logger();
   reference_odometry_sub_ =  nh_.subscribe("imu_frame_odometry_topic", 1000, &RosBackendNode::referenceOdometryCallback, this);
@@ -72,9 +64,9 @@ void RosBackendNode::imuCallback(const sensor_msgs::ImuConstPtr& msg)
 }
 
 
-void RosBackendNode::updateBuiltInPlanner(const nav_msgs::Odometry &odometry_msg){
+void RosBackendNode::updateBuiltInPlanner(){
 
-  BuiltInPlanner::PlannerStatus planner_status = planner_->step(odometry_msg);
+  BuiltInPlanner::PlannerStatus planner_status = planner_->getStatus();
 
   if(simulation_state_ == WAINTING_PLANNER && planner_status == BuiltInPlanner::RUNNING){
     // start to record
@@ -89,8 +81,8 @@ void RosBackendNode::updateBuiltInPlanner(const nav_msgs::Odometry &odometry_msg
 }
 
 void RosBackendNode::setState(RosBackendNode::SimulationState state)
-{
-  ROS_INFO_STREAM("" << simulation_state_ );
+{  
+  ROS_INFO_STREAM("Change state from: " << simulation_state_ << " to: " << state );
   simulation_state_ = state;
 }
 
@@ -100,7 +92,7 @@ void RosBackendNode::referenceOdometryCallback(const nav_msgs::Odometry &odometr
 
   if(use_builtin_planner_)
   {
-    updateBuiltInPlanner(odometry_msg);
+    updateBuiltInPlanner();
   }
 
   if(simulation_state_ == RECORDING)

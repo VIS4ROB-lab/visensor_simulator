@@ -2,7 +2,9 @@
 #ifndef VISENSOR_SIMULATOR_LOGGER_H
 #define VISENSOR_SIMULATOR_LOGGER_H
 
-
+#include <vector>
+#include <fstream>
+#include <ros/time.h>
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/Geometry>
 
@@ -60,7 +62,7 @@ std::ostream& operator<<(std::ostream& os, const ImuSensorReadings& T)
 class Logger{
 public:
     Logger():is_valid_(false){}
-    ~Logger(){stop();}//todo flush files
+    ~Logger(){stop();}
 
     bool startLogger( std::string output_folder )
     {
@@ -69,7 +71,7 @@ public:
 
         std::string imu_filename = output_folder + "imu_data.csv";
         std::string pose_filename = output_folder + "pose_data.csv";
-        ROS_INFO_STREAM(" " << imu_filename);
+        //ROS_INFO_STREAM(" " << imu_filename);
         imu_file.open(imu_filename);
         pose_file.open(pose_filename);
 

@@ -51,6 +51,9 @@ SimpleWaypointPlanner::SimpleWaypointPlanner(double yaw_max_error, double positi
   pose_command_pub_ = nh_.advertise<trajectory_msgs::MultiDOFJointTrajectory>(mav_msgs::default_topics::COMMAND_TRAJECTORY, 1);
   gimbal_command_pub_ = nh_.advertise<sensor_msgs::Joy>("command/gimbal_actuators", 1);
 
+  robot_odometry_sub_ =  nh_.subscribe("robot_odometry_topic", 1000, &SimpleWaypointPlanner::robotOdometryCallback, this);
+
+
   //sample trajectory
   waypoints_.push_back(Waypoint(1,-5,2,0,0));
   waypoints_.push_back(Waypoint(1,5,2,0,0));
@@ -85,6 +88,38 @@ bool SimpleWaypointPlanner::loadConfigurationFromFile(const std::string &filepat
   return false;
 }
 
+BuiltInPlanner::PlannerStatus SimpleWaypointPlanner::getStatus(){
+  return status_;
+}
+
+void SimpleWaypointPlanner::robotOdometryCallback(const nav_msgs::Odometry &curr_odometry){
+  if(status_ == STARTING){
+    if(reachedNextWaypoint(curr_odometry.pose.pose)){
+      status_ = RUNNING;//do not send waypoints yet, the logger need to be started
+    }else{
+      goNextPose();
+    }
+  }
+  else if (status_ == RUNNING ) {
+    {
+      if(reachedNextWaypoint(curr_odometry.pose.pose)){
+        if(waypoints_.size() > 0){
+          waypoints_.pop_front();
+        }
+      }
+
+      if(waypoints_.size() == 0)
+      {
+        status_ = COMPLETED;
+      }else
+      {
+        goNextPose();
+      }
+    }
+  }
+}
+
+
 bool SimpleWaypointPlanner::getNextWaypoint( Eigen::Vector3d &desired_position, double &desired_yaw, float &desired_gimbal_pitch)
 {
   if(waypoints_.size() > 0)
@@ -115,37 +150,6 @@ void SimpleWaypointPlanner::goNextPose()
   sendPoseCommand(desired_position,desired_yaw,desired_gimbal_pitch);
 }
 
-BuiltInPlanner::PlannerStatus SimpleWaypointPlanner::step(const nav_msgs::Odometry &curr_odometry)
-{
-
-  if(status_ == STARTING){
-    if(reachedNextWaypoint(curr_odometry.pose.pose)){
-      status_ = RUNNING;//do not send waypoints yet, the logger need to be started
-    }else{
-      goNextPose();
-    }
-  }
-  else if (status_ == RUNNING ) {
-    {
-      if(reachedNextWaypoint(curr_odometry.pose.pose)){
-        if(waypoints_.size() > 0){
-          waypoints_.pop_front();
-        }
-      }
-
-      if(waypoints_.size() == 0)
-      {
-        status_ = COMPLETED;
-      }else
-      {
-        goNextPose();
-      }
-    }
-  }
-
-  return status_;
-}
-
 
 bool SimpleWaypointPlanner::reachedNextWaypoint(const geometry_msgs::Pose& curr_pose)// do not consider the gimbal position
 {
@@ -169,7 +173,7 @@ void SimpleWaypointPlanner::sendPoseCommand(const Eigen::Vector3d &desired_posit
   trajectory_msgs::MultiDOFJointTrajectory trajectory_msg;
   trajectory_msg.header.stamp = ros::Time::now();
   mav_msgs::msgMultiDofJointTrajectoryFromPositionYaw(desired_position, desired_yaw, &trajectory_msg);
-  ROS_INFO("Publishing NEW waypoint: %lf :: %lf :: %lf :: %lf :: %f",desired_position.x(), desired_position.y(), desired_position.z(),desired_yaw/kDEG_2_RAD,desired_gimbal_pitch);
+  ROS_INFO("Publishing waypoint: %0.1lf :: %0.1lf :: %0.1lf :: %0.1lf :: %0.1f",desired_position.x(), desired_position.y(), desired_position.z(),desired_yaw/kDEG_2_RAD,desired_gimbal_pitch);
   pose_command_pub_.publish(trajectory_msg);
   sensor_msgs::Joy gimbal_msg;
   gimbal_msg.axes= {0.0f,desired_gimbal_pitch,0.0f};
