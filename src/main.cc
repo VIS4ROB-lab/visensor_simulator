@@ -19,14 +19,17 @@ int main(int argc, char** argv)
 
     std::string project_folder(argv[1]);
 
-    RosBackendNode node;
+    SimpleWaypointPlanner * planner = new SimpleWaypointPlanner();
 
     ROS_INFO("ros_backend_node started");
 
-    //param use_embeed planner
-    //param outputfolder
+    RosBackendNode node(planner);
 
     node.run(project_folder);
+
+    delete planner;
+
+
 
     ROS_INFO("shutting down ros_backend_node");
 

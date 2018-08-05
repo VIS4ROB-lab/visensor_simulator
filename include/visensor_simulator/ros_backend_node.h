@@ -6,10 +6,8 @@
 #include <list>
 
 #include <ros/ros.h>
-#include <mav_msgs/common.h>
 #include <nav_msgs/Odometry.h>
-#include <mav_msgs/conversions.h>
-#include <mav_msgs/default_topics.h>
+
 #include <geometry_msgs/PoseStamped.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
@@ -29,40 +27,42 @@ class Logger;
 
 class RosBackendNode{
 public:
-    RosBackendNode();
-    void run(std::string project_folder);
-    ~RosBackendNode();
-    enum SimulationState{
-        NoMission,
-        GoingToStart,
-        InStartPose,
-        InitializationRotine,
-        StartingRecording,
-        InMission,
-        StopingRecording
-    };
+  RosBackendNode(BuiltInPlanner *planner);
+  ~RosBackendNode();
+
+  enum SimulationState{
+    WAINTING_PLANNER,
+    RECORDING,
+    FINISHED
+  };
+
+  void run(const std::string &project_folder);
+
 private:
 
 
-    //ROS publishers and subscribers
-    ros::NodeHandle nh_;
-    ros::NodeHandle nh_private_;
-    ros::Subscriber imu_sub_;
-    ros::Subscriber reference_odometry_sub_;
-    ros::Publisher pose_command_pub_;
-    ros::Publisher gimbal_command_pub_;
 
-    Logger* logger_;
-    SimpleWaypointPlanner simple_planner_;
 
-    //Callback functions
-    void referenceOdometryCallback(const nav_msgs::Odometry& odometry_msg);
-    void imuCallback(const sensor_msgs::ImuConstPtr& msg);
-    void sendPoseCommand(const Eigen::Vector3d &desired_position, const double &desired_yaw,const float &desired_gimbal_pitch);
-    void goNextPose();
+  //ROS publishers and subscribers
+  ros::NodeHandle nh_;
+  ros::NodeHandle nh_private_;
+  ros::Subscriber imu_sub_;
+  ros::Subscriber reference_odometry_sub_;
 
-    void setState(SimulationState state);
-    SimulationState state_;
+
+  Logger* logger_;
+  BuiltInPlanner *planner_;
+
+  bool use_builtin_planner_;
+
+  //Callback functions
+  void referenceOdometryCallback(const nav_msgs::Odometry& odometry_msg);
+  void updateBuiltInPlanner(const nav_msgs::Odometry &odometry_msg);
+  void imuCallback(const sensor_msgs::ImuConstPtr& msg);
+  //void goNextPose();
+  void setState(SimulationState state);
+  SimulationState simulation_state_;
+  std::string output_folder_path_;
 };
 
 
