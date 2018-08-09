@@ -75,6 +75,10 @@ class Logger {
       pose_file.close();
     }
 
+    imu_file << "timestamp, acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z" << std::endl << std::flush;
+    pose_file << "timestamp, p_x, p_y,p_z, q_x, q_y,q_z, q_w" << std::endl << std::flush;
+
+
     imu_data.clear();
     imu_data.reserve(100000);
     pose_data.clear();
@@ -121,14 +125,13 @@ class Logger {
   std::ofstream pose_file;
 
   void serializeImu() {
-    imu_file << "timestamp, acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z"
-             << std::endl;
+    
     for (const auto& reading : imu_data)
       imu_file << reading << std::endl;
   }
 
   void serializePoses() {
-    pose_file << "timestamp, p_x, p_y,p_z, q_x, q_y,q_z, q_w" << std::endl;
+    
     for (const auto& reading : pose_data)
       pose_file << reading << std::endl;
   }

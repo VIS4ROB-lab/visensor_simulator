@@ -285,7 +285,7 @@ class VISimProjectLoader():
     @staticmethod
     def load_trajectories(operator, project_object):
         
-        poses_filename  = os.path.join(project_object.visim_project_setting.project_folder,'output/1_Rotors/pose_data.csv')
+        poses_filename  = os.path.join(project_object.visim_project_setting.project_folder,'output/1_InertialPose/pose_data.csv')
         print (poses_filename)
         
         body_poses_list = []

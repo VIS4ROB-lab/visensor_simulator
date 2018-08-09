@@ -22,8 +22,11 @@ add_custom_target(headers SOURCES ${LibFiles})
 
 cs_add_library(visensor_sim_backend src/ros_backend_node.cc )
 
-cs_add_executable(ros_backend_node src/main.cc src/simple_waypoint_planner.cc)
-target_link_libraries(ros_backend_node ${catkin_LIBRARIES} visensor_sim_backend)
+cs_add_executable(simple_planner_backend src/simple_planner_backend.cc src/simple_waypoint_planner.cc)
+target_link_libraries(simple_planner_backend ${catkin_LIBRARIES} visensor_sim_backend)
+
+cs_add_executable(extern_planner_backend src/simple_planner_backend.cc src/simple_waypoint_planner.cc)
+target_link_libraries(extern_planner_backend ${catkin_LIBRARIES} visensor_sim_backend)
 
 cs_add_library(poltergeist_gimbal_plugin src/gazebo_poltergeist_gimbal_plugin.cpp)
 target_link_libraries(poltergeist_gimbal_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})

@@ -22,7 +22,7 @@ class BuiltInPlanner;
 
 class RosBackendNode {
  public:
-  RosBackendNode(BuiltInPlanner* planner);
+  RosBackendNode(BuiltInPlanner* planner=nullptr);
   ~RosBackendNode();
 
   enum SimulationState { INVALID, WAINTING_PLANNER, RECORDING, FINISHED };
