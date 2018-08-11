@@ -9,7 +9,7 @@ class BuiltInPlanner {
   enum PlannerStatus { INVALID, STARTING, RUNNING, COMPLETED };
 
   virtual PlannerStatus getStatus() = 0;
-  virtual bool loadConfigurationFromFile(const std::string& filepath) = 0;
+  virtual bool loadConfigurationFromFile(const std::string& project_folder_path) = 0;
 };
 
 #endif  // VISENSOR_SIMULATOR_BUILTIN_PLANNER_H

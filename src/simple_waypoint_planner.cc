@@ -1,8 +1,8 @@
 #include <fstream>
+#include <boost/filesystem.hpp>
 #include <mav_msgs/common.h>
 #include <mav_msgs/conversions.h>
 #include <mav_msgs/default_topics.h>
-#include <visensor_simulator/simple_waypoint_planner.h>
 #include <visensor_simulator/simple_waypoint_planner.h>
 
 #include <sensor_msgs/Joy.h>
@@ -60,28 +60,51 @@ SimpleWaypointPlanner::SimpleWaypointPlanner(
 }
 
 bool SimpleWaypointPlanner::loadConfigurationFromFile(
-    const std::string& filepath) {
+    const std::string& project_folder_path) {
   waypoints_.clear();
   status_ = INVALID;
-  std::ifstream file(filepath);
-  if (file.is_open()) {
-    double x, y, z, yaw;
-    float gimbal_pitch;
-    char eater;  // eats commas
-    while (file >> x >> eater >> y >> eater >> z >> eater >> yaw >> eater >>
-           gimbal_pitch) {
-      waypoints_.push_back(Waypoint(x, y, z, yaw * kDEG_2_RAD, gimbal_pitch));
-      if (file.eof()) {
-        break;
+  boost::filesystem::path project_folder(project_folder_path);
+  boost::filesystem::path waypoint_file =
+      project_folder / "waypoints.txt";
+
+  if (boost::filesystem::exists(waypoint_file)) {
+    std::ifstream file(waypoint_file.c_str());
+    if (file.is_open()) {
+      double x, y, z, yaw;
+      float gimbal_pitch;
+      char eater;  // eats commas
+      while (file >> x >> eater >> y >> eater >> z >> eater >> yaw >> eater >>
+             gimbal_pitch) {
+        waypoints_.push_back(Waypoint(x, y, z, yaw * kDEG_2_RAD, gimbal_pitch));
+        if (file.eof()) {
+          break;
+        }
       }
+      if (waypoints_.size() > 0) {
+        status_ = STARTING;
+        return true;
+      }
+      else{
+        ROS_ERROR_STREAM( "" << waypoint_file.c_str() <<" file does not have any waypoint. ");
+      }
+
+      }else
+      {
+        ROS_ERROR_STREAM("" << waypoint_file.c_str() <<" file could not be opened");
+      }
+
+
+  }else
+    {
+      ROS_ERROR_STREAM(
+            "the project folder does not have a waypoints.txt file :"
+            << waypoint_file.c_str());
     }
-    if (waypoints_.size() > 0) {
-      status_ = STARTING;
-      return true;
-    }
-  }
+
+
   return false;
 }
+
 
 BuiltInPlanner::PlannerStatus SimpleWaypointPlanner::getStatus() {
   return status_;

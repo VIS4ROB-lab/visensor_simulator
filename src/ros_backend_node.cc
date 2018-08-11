@@ -59,7 +59,6 @@ void RosBackendNode::imuCallback(const sensor_msgs::ImuConstPtr& msg) {
     imu_measurement.timestamp = msg->header.stamp;
 
     logger_->logIMU(imu_measurement);
-    
   }
 }
 
@@ -119,11 +118,8 @@ void RosBackendNode::run(const std::string& project_folder) {
     return;
   }
 
-
   boost::filesystem::path output_folder_path =
       project_folder_path / "output/1_InertialPose";
-
-
 
   if (!boost::filesystem::exists(output_folder_path)) {
     if (!boost::filesystem::create_directories(output_folder_path)) {
@@ -144,22 +140,11 @@ void RosBackendNode::run(const std::string& project_folder) {
   output_folder_path_ = std::string(output_folder_path.c_str());
 
   if (use_builtin_planner_) {
-    boost::filesystem::path waypoints_path =
-        project_folder_path / "planner_data.cfg";
-
-    if (!boost::filesystem::exists(waypoints_path)) {
-      ROS_ERROR_STREAM(
-          "the project folder does not have a planner_data.cfg file :"
-          << waypoints_path.c_str());
-      return;
-    }
-
     // open waypoints file
-    if (!planner_->loadConfigurationFromFile(waypoints_path.c_str())) {
-      ROS_ERROR("planner_data.cfg file is invalid");
+    if (!planner_->loadConfigurationFromFile(project_folder_path.c_str())) {
+      ROS_ERROR("Fail to load configuration.");
       return;
     }
-
   } else {
     logger_->startLogger(output_folder_path_.c_str());
     setState(RECORDING);
@@ -177,7 +162,7 @@ void RosBackendNode::run(const std::string& project_folder) {
   logger_->stop();
   if (simulation_state_ == FINISHED)
     ROS_INFO("Simulation data saved!");
-  else if(use_builtin_planner_)
+  else if (use_builtin_planner_)
     ROS_WARN("Simulation data saved, but it is INCOMPLETE!");
 }
 

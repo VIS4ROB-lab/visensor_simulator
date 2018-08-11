@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="mav_name" default="firefly"/>
+  <arg name="project_folder"  />
+  
+
+  <group ns="$(arg mav_name)">
+    <node name="backend" pkg="visensor_simulator" type="extern_planner_backend" output="screen" args="$(arg project_folder)">
+      <remap from="imu_frame_odometry_topic" to="vi_sensor/ground_truth/odometry" />
+      <remap from="robot_odometry_topic" to="odometry_sensor1/odometry" />
+      <remap from="imu_topic" to="vi_sensor/imu" />
+      <remap from="command/trajectory" to="command/trajectory" />
+    </node>
+  </group>
+</launch>

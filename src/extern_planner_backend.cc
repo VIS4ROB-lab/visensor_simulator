@@ -1,6 +1,5 @@
 #include <ros/ros.h>
 #include <visensor_simulator/ros_backend_node.h>
-#include <visensor_simulator/simple_waypoint_planner.h>
 
 using namespace ros;
 
@@ -16,7 +15,7 @@ int main(int argc, char** argv) {
 
   ROS_INFO("extern_planner_backend_node started");
 
-  RosBackendNode node();
+  RosBackendNode node;
 
   node.run(project_folder);
 

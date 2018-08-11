@@ -28,7 +28,7 @@ class SimpleWaypointPlanner : public BuiltInPlanner {
   SimpleWaypointPlanner(double yaw_max_error, double position_max_error);
   ~SimpleWaypointPlanner() {}
 
-  bool loadConfigurationFromFile(const std::string& filepath) override;
+  bool loadConfigurationFromFile(const std::string& project_folder_path) override;
 
   PlannerStatus getStatus() override;
 
