@@ -358,8 +358,8 @@ if __name__ == "__main__":
              print( 'Problem with the JSON file parsing. Look in the terminal')
              sys.exit()
         
-        imu_filepath = os.path.join(parsed.project_folder, 'output/1_Rotors/imu_data.csv')
-        gtpose_filepath = os.path.join(parsed.project_folder, 'output/1_Rotors/pose_data.csv')
+        imu_filepath = os.path.join(parsed.project_folder, 'output/1_InertialPose/imu_data.csv')
+        gtpose_filepath = os.path.join(parsed.project_folder, 'output/1_InertialPose/pose_data.csv')
     
         namespace = "/{0}".format(parsed.namespace) if parsed.namespace else ""
 

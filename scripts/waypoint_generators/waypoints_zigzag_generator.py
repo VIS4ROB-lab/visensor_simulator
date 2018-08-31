@@ -40,10 +40,7 @@ def main():
     if parsed.step_east <= 0:
         parsed.step_east = parsed.bound_box_east
     
-    
-    
     num_rows_east = int(math.floor(parsed.bound_box_east/parsed.step_east) + 1)
-    
     
     num_rows_up = 1 if parsed.step_up <= 0 else (parsed.bound_box_up/parsed.step_up)+1
     num_rows_north = 1 if parsed.step_north <= 0 else (parsed.bound_box_north/parsed.step_north)+1
