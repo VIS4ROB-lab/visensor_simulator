@@ -212,7 +212,7 @@ class VISimProjectLoader():
         else:        
             scene.render.resolution_percentage = 100
             scene.render.image_settings.file_format = 'OPEN_EXR'
-            scene.render.image_settings.exr_codec = 'PIZ'
+            scene.render.image_settings.exr_codec = 'NONE'
             scene.render.image_settings.color_depth = '32'
             scene.render.image_settings.color_mode = 'RGB'
             scene.render.image_settings.use_zbuffer = True
@@ -285,7 +285,7 @@ class VISimProjectLoader():
     @staticmethod
     def load_trajectories(operator, project_object):
         
-        poses_filename  = os.path.join(project_object.visim_project_setting.project_folder,'output/1_Rotors/pose_data.csv')
+        poses_filename  = os.path.join(project_object.visim_project_setting.project_folder,'output/1_InertialPose/pose_data.csv')
         print (poses_filename)
         
         body_poses_list = []
@@ -639,7 +639,7 @@ def register():
                     description='File Format for images.',
                     items={
                     ('PNG', 'png', 'Save as png'),
-                    ('OPEN_EXR_MULTILAYER', 'exr (with depth)', 'Save as multilayer exr with z')},
+                    ('OPEN_EXR', 'exr (with depth)', 'Save as exr with z')},
                     default='PNG',update=scene_output_image_format_update)
 
 

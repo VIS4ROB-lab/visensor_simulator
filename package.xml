@@ -1,7 +1,7 @@
 <package>
   <name>visensor_simulator</name>
-  <version>0.0.1</version>
-  <description>Tools for simulating the ASL VI-Sensor</description>
+  <version>0.1.0</version>
+  <description>Simulator to create Visual-Inertial data, such as Skybotics/ETH-ASL VI-Sensor</description>
 
   <maintainer email="lteixeira@mavt.ethz.ch">Lucas Teixeira</maintainer>
 
