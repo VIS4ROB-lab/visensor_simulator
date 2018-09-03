@@ -160,7 +160,7 @@ def convertSRGBToRGB(img_str,size):
                 (img*12.92)*255.0,
                 (1.055*(img**(1.0/2.4))-0.055) * 255.0)
     img.shape = (size[1], size[0])
-	
+    
     return img.astype(np.uint8) #Im.fromarray(img,'F').convert("L")
    
     
@@ -337,20 +337,25 @@ if __name__ == "__main__":
         sys.exit()
         
     #create the bag
+    
     try:
-        with open(proj_filepath) as json_data:
-            try:
-                project_data = json.load(json_data)
-            except ValueError as e:
-                print('Problem with the JSON parsing of project file. '+ str(e))                
-                sys.exit()
+        try: 
+            with open(proj_filepath, "r") as json_data:
+                try:
+                    project_data = json.load(json_data)
+                except ValueError as e:
+                    print('Problem with the JSON parsing of project file. '+ str(e))                
+                    sys.exit()
+        except IOError as e:
+            print('Error open the project JSON file. Check the project_folder '+ str(e))                
+            sys.exit()
                 
 
         
         try:    
             bag = rosbag.Bag(parsed.output_bag, 'w')
         except IOError as e:
-            print('Error to create the bag JSON file, check with your output path is correct and if you have write permission on the folder. '+ str(e))                
+            print('Error to create the bag file, check with your output path is correct and if you have write permission on the folder. '+ str(e))                
             sys.exit()
        
         visim_json_project = VISimProject()
@@ -422,5 +427,6 @@ if __name__ == "__main__":
             print("")
 
     finally:
-        bag.close()
+        if 'bag' in locals():
+            bag.close()
     

@@ -80,6 +80,7 @@ Roadmap
 * add option to disable the simple planner
 * detect incomplete render sequence and jump to the latest one (support in case of shutdown)
 * make everything relative to the project file instead of the project folder
+* add test for topic names on the bagcreator
 
 
 
