@@ -14,12 +14,12 @@ Installation
   
   * Blender 2.79 or newer- (https://askubuntu.com/questions/110821/how-to-install-blender-from-the-official-website)
 
-* Initialize catkin workspace:
+* Initialize catkin workspace (using [catkin tools](https://catkin-tools.readthedocs.io/en/latest/installing.html)):
 ```sh
   $ mkdir -p ~/catkin_ws/src
-  $ cd ~/catkin_ws
-  $ catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
+  $ cd ~/catkin_ws  
   $ catkin init  # initialize your catkin workspace
+  $ catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 * Get the simulator and dependencies
 ```sh
