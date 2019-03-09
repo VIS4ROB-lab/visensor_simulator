@@ -10,7 +10,7 @@ License
 Installation
 ------
 * Requirements:
-  * ROS Indigo or Kinect - (http://wiki.ros.org/indigo/Installation/Ubuntu)
+  * ROS Indigo or Kinetic - (http://wiki.ros.org/indigo/Installation/Ubuntu)/(http://wiki.ros.org/kinetic/Installation/Ubuntu)
   * Blender 2.79 or newer- (https://askubuntu.com/questions/110821/how-to-install-blender-from-the-official-website)
 
 * Initialize catkin workspace:
