@@ -163,7 +163,16 @@ class BodyTrajectory:
         for p in csv_parsed_list:
             curr_pose = RosPose(mathutils.Vector((float(p[1]),float(p[2]),float(p[3]))),mathutils.Quaternion([float(p[7]),float(p[4]),float(p[5]),float(p[6])]),p[0])
             self.poses.append(curr_pose)
-    
+
+
+#bool flag to control bounding boxes
+created = False
+#mat_material = None
+mat_green = None
+mat_blue = None
+once = True
+visim_camera = None
+
 
 
 
@@ -185,16 +194,24 @@ class VISimProjectLoader():
         for child in project_object.children:
             if child.type == 'CAMERA':
                 child.hide = True
-            else:
-                operator.report({'ERROR'}, 'Unexpected project child type :'+ str(child.data))
-                return {'CANCELLED'}
+            #else:
+                #operator.report({'ERROR'}, 'Unexpected project child type :'+ str(child.data))
+                #return {'CANCELLED'}
                 
         context.scene.camera.hide = False
 
-        images_output_folder = os.path.join(project_object.visim_project_setting.project_folder,'output/2_Blender/'+camera_data.visim_cam_config.cam_name+'_rgbd')
+        if created:
+            images_output_folder = os.path.join(project_object.visim_project_setting.project_folder,'output/2_Blender/'+camera_data.visim_cam_config.cam_name+'_segmented')
+        else:
+            if context.scene.output_image_format == 'PNG':
+                images_output_folder = os.path.join(project_object.visim_project_setting.project_folder,'output/2_Blender/'+camera_data.visim_cam_config.cam_name+'_original')
+            else:
+                images_output_folder = os.path.join(project_object.visim_project_setting.project_folder,'output/2_Blender/'+camera_data.visim_cam_config.cam_name+'_exr')
+
+#************************
+        
         #if os.access(images_output_folder, os.R_OK | os.W_OK) :
         #    shutil.rmtree(images_output_folder)
-        
         os.makedirs(images_output_folder,exist_ok=True)
 
         scene = context.scene
@@ -210,6 +227,7 @@ class VISimProjectLoader():
             scene.render.image_settings.color_depth = '8'
             scene.render.image_settings.compression = 0
         else:        
+            
             scene.render.resolution_percentage = 100
             scene.render.image_settings.file_format = 'OPEN_EXR'
             scene.render.image_settings.exr_codec = 'NONE'
@@ -219,9 +237,110 @@ class VISimProjectLoader():
         
         return {'FINISHED'}
         
+#***************place to put script
+    @staticmethod
+    def load_bbox(operator, context):
+        global created
+        global once
+        #global mat_material
+        global visim_camera
+        global mat_blue
+        global mat_green
+        bbox_data = []
+        project_object = context.scene.visim_render_camera.parent
+        #Extracting data from file
+        bbox_file = os.path.join(project_object.visim_project_setting.project_folder,'output/3_labelimg/world_bbox.txt')
+        with open(bbox_file, 'r') as f:
+            for line in f:
+                l = line.split()
+                l = [float(x) for x in l]
+                bbox_data.append(tuple(l))
 
         
-    
+        
+        #create bounding box using API
+		#first change the building to green
+
+		#erase all the original materials for separate parts of building
+        #for ob in bpy.context.selected_editable_objects:
+            #ob.active_material_index = 0
+            #for i in range(len(ob.material_slots)):
+                #bpy.ops.object.material_slot_remove({'object': ob})
+
+
+        
+        
+        
+        #These operation only do once
+        if once : 
+            objects = bpy.context.scene.objects       
+            #always get the first object with type mesh
+            for obj in objects:
+                if(obj.type == "MESH"):
+                    mesh = obj
+                    break
+            for obj in objects:
+                if(obj.type == "EMPTY"):
+                    visim_camera = obj
+                    break
+            #mat_material = mesh.active_material
+            mesh.data.materials.clear()
+            mat_green = bpy.data.materials.new("green")
+            mat_green.diffuse_color = (0,0.8,0)
+            mesh.data.materials.append(mat_green)
+            mesh.data.materials[mat_green.name].use_shadeless = True
+            mat_blue = bpy.data.materials.new("blue")
+            mat_blue.diffuse_color = (0,0,0.8)
+            #change the viewport to solid
+            area = next(area for area in bpy.context.screen.areas if area.type == 'VIEW_3D')
+            space = next(space for space in area.spaces if space.type == 'VIEW_3D')
+            space.viewport_shade = 'SOLID'
+            once = False
+
+        #if reverse the operation
+        if created == True:
+            #mesh.data.materials.clear()
+            #mesh.data.materials.append(mat_material)
+            #mesh.data.materials[mat_material.name].use_shadeless = True
+
+            #area = next(area for area in bpy.context.screen.areas if area.type == 'VIEW_3D')
+            #space = next(space for space in area.spaces if space.type == 'VIEW_3D')
+            #space.viewport_shade = 'MATERIAL'
+            
+            #delete all children of mesh
+            for child in visim_camera.children:
+               
+               if child.type == "MESH":
+                   bpy.context.scene.objects.unlink(child)
+                   bpy.data.meshes.remove(child.data)
+                   bpy.data.objects.remove(child)
+            
+            created = False
+            return {'FINISHED'}
+        
+
+        for i in range(len(bbox_data)):    
+            bpy.ops.mesh.primitive_cube_add()
+            cube = bpy.context.active_object
+            cube.name = "bbox"
+            cube.parent = visim_camera
+            #after setting parent, relative position origin to from world to mesh. so reverse it
+            cube.matrix_parent_inverse = visim_camera.matrix_world.inverted()
+            cube.location = bbox_data[i][1:4]
+            cube.dimensions = bbox_data[i][4:7]
+            cube.rotation_euler = bbox_data[i][7:10]
+            cube.data.materials.clear()
+            cube.data.materials.append(mat_blue)
+            cube.data.materials[mat_blue.name].use_shadeless = True
+        
+        
+
+        created = True
+        return {'FINISHED'}
+
+#**************************************   
+
+
     @staticmethod
     def load_trajectory(curr_cam_obj, body_trajectory):
         ros2blender_quat = mathutils.Quaternion([0,1,0,0])
@@ -454,6 +573,8 @@ class VISimProjectObjectSetting(bpy.types.PropertyGroup):
         subtype = 'DIR_PATH'
     )
 
+#**********************************
+
 class VISimTrajectoryReloadOperator(bpy.types.Operator):
     bl_idname = "visim.reload_trajectory"
     bl_label = "Reload VISim only trajectory"
@@ -491,7 +612,7 @@ class VISimProjectPanel(bpy.types.Panel):
         self.layout.operator(VISimProjectReloadOperator.bl_idname)
         
 
-
+#********************************
 class VISimRaytraceRenderOperator(bpy.types.Operator):
     bl_idname = "visim.blender_render"
     bl_label = "Blender Render"
@@ -505,7 +626,8 @@ class VISimRaytraceRenderOperator(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         return context.scene.visim_render_camera is not None
-        
+
+#****************************************       
 class VISimOGLRenderOperator(bpy.types.Operator):
     bl_idname = "visim.opengl_render"
     bl_label = "Quick Render"
@@ -537,18 +659,41 @@ class VISimOGLRenderOperator(bpy.types.Operator):
     def poll(cls, context):
         return ((context.scene.visim_render_camera is not None) and context.scene.output_image_format == 'PNG') 
 
+#reload = False
 
 class VISimPrepareRenderOperator(bpy.types.Operator):
     bl_idname = "visim.prerender"
     bl_label = "Reload camera"
-
+    #global reload
     def execute(self, context):
-                       
+        #reload = True           
         return VISimProjectLoader.prepare_render(self,context)
 
     @classmethod
     def poll(cls, context):
+        #return (context.scene.visim_render_camera is not None) and not reload 
         return context.scene.visim_render_camera is not None
+
+#*********newly added*********
+
+class VISimCreateBBoxOperator(bpy.types.Operator):
+    bl_idname = "visim.create_bboxes"
+    bl_label = "Create BBoxes"
+    #global reload
+    def execute(self, context):
+        #reload = False
+        VISimProjectLoader.load_bbox(self,context)
+        return VISimProjectLoader.prepare_render(self,context)
+
+    @classmethod
+    def poll(cls, context):
+        project_object = context.scene.visim_render_camera.parent
+        bbox_file = os.path.join(project_object.visim_project_setting.project_folder,'output/3_labelimg/world_bbox.txt')
+        #return ((context.scene.visim_render_camera is not None) and os.path.exists (bbox_file))
+        #return context.scene.visim_render_camera is not None
+        #return os.path.exists (bbox_file) and reload
+        return os.path.exists (bbox_file)
+        #return reload
 
 
 class VISimRenderPanel(bpy.types.Panel):
@@ -562,6 +707,11 @@ class VISimRenderPanel(bpy.types.Panel):
         layout = self.layout        
         layout.prop(context.scene, "visim_render_camera", expand=True)
         layout.operator(VISimPrepareRenderOperator.bl_idname)   
+		
+#*************newly added
+        layout.prop(context.scene, "visim_create_bbox", expand=True)
+        layout.operator(VISimCreateBBoxOperator.bl_idname)
+#**************************************		
          
         layout.label("Image format:")
         layout.prop(context.scene, "output_image_format", expand=True)
@@ -570,6 +720,7 @@ class VISimRenderPanel(bpy.types.Panel):
         row.alignment = 'EXPAND'
         row.operator(VISimOGLRenderOperator.bl_idname, icon='RENDER_ANIMATION')
         row.operator(VISimRaytraceRenderOperator.bl_idname, icon='RENDER_ANIMATION')
+
 
 class ImportVISimProj(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -618,13 +769,14 @@ classes = (
     VISimProjectReloadOperator,
     VISimRenderPanel,
     VISimPrepareRenderOperator,
+	VISimCreateBBoxOperator,
     VISimOGLRenderOperator,
     VISimRaytraceRenderOperator,
     VISimCameraSetting,
     VISimProjectObjectSetting,
 )
 
-
+#************************
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
