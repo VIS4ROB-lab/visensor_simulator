@@ -203,7 +203,10 @@ class VISimProjectLoader():
         if created:
             images_output_folder = os.path.join(project_object.visim_project_setting.project_folder,'output/2_Blender/'+camera_data.visim_cam_config.cam_name+'_segmented')
         else:
-            images_output_folder = os.path.join(project_object.visim_project_setting.project_folder,'output/2_Blender/'+camera_data.visim_cam_config.cam_name+'_original')
+            if context.scene.output_image_format == 'PNG':
+                images_output_folder = os.path.join(project_object.visim_project_setting.project_folder,'output/2_Blender/'+camera_data.visim_cam_config.cam_name+'_original')
+            else:
+                images_output_folder = os.path.join(project_object.visim_project_setting.project_folder,'output/2_Blender/'+camera_data.visim_cam_config.cam_name+'_exr')
 
 #************************
         
@@ -224,6 +227,7 @@ class VISimProjectLoader():
             scene.render.image_settings.color_depth = '8'
             scene.render.image_settings.compression = 0
         else:        
+            
             scene.render.resolution_percentage = 100
             scene.render.image_settings.file_format = 'OPEN_EXR'
             scene.render.image_settings.exr_codec = 'NONE'
