@@ -15,7 +15,7 @@ bl_info = {
     "description": "Import and Render a VISensor Simulator project",
     "author": "Lucas Teixeira",
     "version": (0, 4),
-    "blender": (2, 79, 0),
+    "blender": (2, 80, 0),
     "location": "File > Import-Export",
     "warning": "", # used for warning icon and text in addons panel
     "wiki_url": "lteixeira@mavt.ethz.ch"
@@ -139,7 +139,7 @@ class RosPose:
     
     def transformed(self, rhs ):
         result = RosPose()        
-        result.q = self.q * rhs.q
+        result.q = self.q @ rhs.q
         
         rotated_p_rhs = rhs.p.copy()
         rotated_p_rhs.rotate(self.q)
@@ -181,15 +181,15 @@ class VISimProjectLoader():
         #change scene camera
         context.scene.camera = context.scene.visim_render_camera
         
-        project_object.hide = True        
+        project_object.hide_viewport = True
         for child in project_object.children:
             if child.type == 'CAMERA':
-                child.hide = True
+                child.hide_viewport = True
             else:
                 operator.report({'ERROR'}, 'Unexpected project child type :'+ str(child.data))
                 return {'CANCELLED'}
                 
-        context.scene.camera.hide = False
+        context.scene.camera.hide_viewport = False
 
         images_output_folder = os.path.join(project_object.visim_project_setting.project_folder,'output/2_Blender/'+camera_data.visim_cam_config.cam_name+'_rgbd')
         #if os.access(images_output_folder, os.R_OK | os.W_OK) :
@@ -203,13 +203,15 @@ class VISimProjectLoader():
         scene.render.resolution_y = camera_data.visim_cam_config.height
         bpy.context.scene.frame_step = camera_data.visim_cam_config.frequency_reduction_factor
         
-        if context.scene.output_image_format == 'PNG':
+        #RM if context.scene.output_image_format == 'PNG':
+        if scene.render.image_settings.file_format == 'PNG':
             scene.render.resolution_percentage = 100
-            scene.render.image_settings.file_format = 'PNG'
+            #RM scene.render.image_settings.file_format = 'PNG'
             scene.render.image_settings.color_mode = 'RGB'
             scene.render.image_settings.color_depth = '8'
             scene.render.image_settings.compression = 0
-        else:        
+        else:
+            scene.render.filepath = os.path.join(images_output_folder,'bl_############.exr') #RM added
             scene.render.resolution_percentage = 100
             scene.render.image_settings.file_format = 'OPEN_EXR'
             scene.render.image_settings.exr_codec = 'NONE'
@@ -227,7 +229,7 @@ class VISimProjectLoader():
         ros2blender_quat = mathutils.Quaternion([0,1,0,0])
         ctrans = curr_cam_obj.data.visim_cam_config.imu_camera_translation
         cquat  =  curr_cam_obj.data.visim_cam_config.imu_camera_quaternion
-        T_BC = RosPose(ctrans,cquat*ros2blender_quat)
+        T_BC = RosPose(ctrans,cquat @ ros2blender_quat)
         keyframe_counter = 1
         nposes = len(body_trajectory.poses)
         last_percent = -1
@@ -262,10 +264,10 @@ class VISimProjectLoader():
             
         camera_data = bpy.data.cameras.new( camera_obj_name )
         camera_object = bpy.data.objects.new( camera_obj_name, camera_data )
-        bpy.context.scene.objects.link( camera_object )
+        bpy.context.collection.objects.link( camera_object )
         camera_object.parent = parent
         camera_object.hide_render = True
-        camera_object.hide = True
+        camera_object.hide_viewport = False #RM True
     
         #configure
         camera_data.angle = 2*math.atan2( visim_camera.width/2.0,visim_camera.focal_length )
@@ -345,11 +347,11 @@ class VISimProjectLoader():
                 return {'CANCELLED'}
                 
         #set object mode- I dont know why but it is part of the tutorial
-        if(bpy.context.scene.objects.active == None):
+        if(bpy.context.view_layer.objects.active == None):
             #select any object
-            bpy.context.scene.objects.active = bpy.context.scene.objects.values().pop()
+            bpy.context.view_layer.objects.active = bpy.context.scene.objects.values().pop()
 
-        bpy.ops.object.mode_set(mode='OBJECT')
+        #bpy.ops.object.mode_set(mode='OBJECT')
 
         if project_object == None:
 
@@ -361,19 +363,19 @@ class VISimProjectLoader():
 
             #create a empty to hold the cameras
             project_object = bpy.data.objects.new( project_name , None )
-            project_object.empty_draw_size = 2
-            project_object.empty_draw_type = 'PLAIN_AXES'
+            project_object.empty_display_size = 2
+            project_object.empty_display_type = 'PLAIN_AXES'
             project_object.hide_render = True
-            project_object.hide = True
+            project_object.hide_viewport = False #RM True
             #'IPO_BACK'
 
             #add to the current scene
-            bpy.context.scene.objects.link( project_object )
+            bpy.context.collection.objects.link( project_object )
 
             root_output_folder = os.path.dirname(os.path.abspath(filepath))
             project_object.visim_project_setting.has_config = True
             project_object.visim_project_setting.project_folder = root_output_folder
-            bpy.context.scene.objects.active = project_object
+            bpy.context.view_layer.objects.active = project_object
 
         else:
             #delete all children
@@ -629,7 +631,7 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    bpy.types.INFO_MT_file_import.append(menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
 
     bpy.types.Object.visim_project_setting =  bpy.props.PointerProperty(type=VISimProjectObjectSetting)
     bpy.types.Camera.visim_cam_config =  bpy.props.PointerProperty(type=VISimCameraSetting)
@@ -644,7 +646,7 @@ def register():
 
 
 def unregister():
-    bpy.types.INFO_MT_file_import.remove(menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
     
 
     for cls in classes:
