@@ -200,7 +200,7 @@ class GazeboPoltergeistGimbalPlugin : public ModelPlugin {
     if (joints_[joint_index] != nullptr)
       return ConvertAngle180(
           std::fmod(
-              joints_[joint_index]->GetAngle(0).Degree() + 72000000.0, 360.0));
+              joints_[joint_index]->Position(0) * (180 / M_PI) + 72000000.0, 360.0));
 
     return -1e16;
   }
@@ -225,9 +225,9 @@ class GazeboPoltergeistGimbalPlugin : public ModelPlugin {
   double test_math() {
     double joint_index = 1;
     ROS_INFO_STREAM(
-        " 1: " << joints_[joint_index]->GetAngle(0).Degree() << " 2: "
+        " 1: " << joints_[joint_index]->Position(0) * (180 / M_PI) << " 2: "
                << std::fmod(
-                      joints_[joint_index]->GetAngle(0).Degree() + 72000000.0,
+                      joints_[joint_index]->Position(0) * (180 / M_PI) + 72000000.0,
                       360.0)
                << " 3: " << GetJointPosition(1) << " 4: "
                << GetJointPosition(joint_index) - base_points_[joint_index] +
