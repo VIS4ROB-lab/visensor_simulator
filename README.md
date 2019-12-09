@@ -10,9 +10,8 @@ License
 Installation
 ------
 * Requirements:
-  * ROS [Indigo](http://wiki.ros.org/indigo/Installation/Ubuntu) or [Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
-  
-  * Blender 2.79 or newer- (https://askubuntu.com/questions/110821/how-to-install-blender-from-the-official-website)
+  * ROS [Melodic](http://wiki.ros.org/melodic/Installation/Ubuntu)
+  * Blender 2.80 or newer- (https://askubuntu.com/questions/110821/how-to-install-blender-from-the-official-website)
 
 * Initialize catkin workspace (using [catkin tools](https://catkin-tools.readthedocs.io/en/latest/installing.html)):
 ```sh
@@ -35,16 +34,16 @@ Installation
   $ pip install OpenEXR
   
   $ git clone git@github.com:VIS4ROB-lab/visensor_simulator.git
-  $ git checkout devel
+  $ git checkout blender_2.80
 
 
 ```
 * Build the workspace  
 ```sh
-  $ catkin build visensor_simulator
+  $ catkin build
 ```
 
-* Import the script "visensor_simulator/scripts/blender/visensor_sim_blender_addon.py" as an add-on in your blender (https://blender.stackexchange.com/questions/1688/installing-an-addon)
+* Open your Blender, navigate to Edit > Preferences > Add-ons, and import the script "visensor_simulator/scripts/blender/visensor_sim_blender_addon.py" as an add-on by clicking on "Install..." (https://docs.blender.org/manual/en/latest/editors/preferences/addons.html)
 
 
 Step-by-step
