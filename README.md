@@ -1,11 +1,11 @@
 VI-Sensor Simulator
 ========================
-The simulation of the VI-Sensor.   This is a alpha version. No Guarantees.
-**Please do not share without the autorization of the author**
+The simulation of the VI-Sensor. This is a alpha version. No Guarantees.
+
 
 License
 ------
-???-- there is copyright code from other libraries.
+???-- there is copyright code from other libraries. Mostly commented in the source code.
 
 Installation
 ------
@@ -13,6 +13,7 @@ Installation
   * ROS [Indigo](http://wiki.ros.org/indigo/Installation/Ubuntu) or [Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
   
   * Blender 2.79 or newer- (https://askubuntu.com/questions/110821/how-to-install-blender-from-the-official-website)
+  (there is the most stable version. There is a very alpha version for Blender 2.8 in another branch)
 
 * Initialize catkin workspace (using [catkin tools](https://catkin-tools.readthedocs.io/en/latest/installing.html)):
 ```sh
