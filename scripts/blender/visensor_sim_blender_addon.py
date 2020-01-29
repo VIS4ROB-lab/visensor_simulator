@@ -31,13 +31,9 @@ class VISimCamera():
     frequency_reduction_factor = 99 # if 10 then it is 10 times SLOWER than the imu that runs at 200Hz
     height = 480
     width = 752
-    #transform_ImuCamera = [0, -1, 0, 0, #frontal camera in ros standard
-    #                      -1, 0, 0, 0,
-    #                      0, 0, -1, 0,
-    #                      0, 0, 0, 1]
-    transform_ImuCamera = [0, 0, 1, 0, #frontal camera in ros standard
+    transform_ImuCamera = [0, -1, 0, 0, #frontal camera in ros standard
                           -1, 0, 0, 0,
-                          0, -1, 0, 0,
+                          0, 0, -1, 0,
                           0, 0, 0, 1] 
     #todo add param with the delay between the imu and image
     
@@ -664,3 +660,4 @@ def unregister():
 
 if __name__ == "__main__":
     register()
+
