@@ -41,10 +41,7 @@ cameraNames=''
 print('\nPrint Scenes...')
 sceneKey = bpy.data.scenes.keys()[0]
 print('Using Scene['  + sceneKey + ']')
-
 scene = bpy.data.scenes[sceneKey]
-
-bpy.context.screen.scene =scene
 
 # Loop all objects and try to find Cameras
 print('Looping Cameras')
@@ -55,10 +52,8 @@ for obj in bpy.data.objects:
       print("Rendering scene["+sceneKey+"] with Camera["+obj.name+"]")
       
       scene.visim_render_camera = obj
-      context.scene.output_image_format = 'PNG'
+      bpy.context.scene.output_image_format = 'OPEN_EXR'
       bpy.ops.visim.prerender('INVOKE_DEFAULT')
-      
-      #scene.render.filepath = '//camera_' + str(c) + '_'
 
       # Render Scene and store the scene
       bpy.ops.render.render('INVOKE_DEFAULT', animation=True )
