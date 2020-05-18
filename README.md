@@ -1,11 +1,32 @@
 VI-Sensor Simulator
 ========================
-The simulation of the VI-Sensor.   This is a alpha version. No Guarantees.
-**Please do not share without the autorization of the author**
+The simulation of the VI-Sensor. No Guarantees.
+
+This work is described in the letter "Aerial Single-View Depth Completion with Image-Guided Uncertainty Estimation", by Lucas Teixeira, Martin R.
+Oswald, Marc Pollefeys, Margarita Chli, published in the IEEE
+Robotics and Automation Letters (RA-L) [IEEE link](https://doi.org/10.1109/LRA.2020.2967296).
+
+#### Video:
+<a href="https://www.youtube.com/embed/IzfFNlYCFHM" target="_blank"><img src="http://img.youtube.com/vi/IzfFNlYCFHM/0.jpg" 
+alt="Mesh" width="240" height="180" border="10" /></a>
+
+#### Citations:
+If you use this code for research, please cite the following publication:
+
+```
+@article{Teixeira:etal:RAL2020,
+    title   = {{Aerial Single-View Depth Completion with Image-Guided Uncertainty Estimation}},
+    author  = {Lucas Teixeira and Martin R. Oswald and Marc Pollefeys and Margarita Chli},
+    journal = {{IEEE} Robotics and Automation Letters ({RA-L})},
+    doi     = {10.1109/LRA.2020.2967296},
+    year    = {2020}
+}
+```
+
 
 License
 ------
-???-- there is copyright code from other libraries.
+there is copyright code from other libraries. Mostly commented in the source code.
 
 Installation
 ------
@@ -17,8 +38,10 @@ Installation
 ```sh
   $ mkdir -p ~/catkin_ws/src
   $ cd ~/catkin_ws  
+  $ source /opt/ros/melodic/setup.bash
   $ catkin init  # initialize your catkin workspace
   $ catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
+  $ catkin config --merge-devel
 ```
 * Get the simulator and dependencies
 ```sh
@@ -33,8 +56,7 @@ Installation
   $ git clone git@github.com:ethz-asl/mav_control_rw
   $ pip install OpenEXR
   
-  $ git clone git@github.com:VIS4ROB-lab/visensor_simulator.git
-  $ git checkout blender_2.80
+  $ git clone git@github.com:VIS4ROB-lab/visensor_simulator.git -b blender_2.8  
 
 
 ```
